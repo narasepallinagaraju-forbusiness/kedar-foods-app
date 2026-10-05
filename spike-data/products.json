@@ -1,0 +1,123 @@
+{
+  "products": [
+    {
+      "id": "spike-001",
+      "slug": "example-product",
+      "name": "Example Product",
+      "brand": "Spike Demo",
+      "category": "Prototype",
+      "description": "Placeholder product available when the static shell is built.",
+      "image": "",
+      "quantities": ["1 unit"]
+    },
+    {
+      "id": "KF-01",
+      "slug": "amul-unsalted-butter",
+      "name": "Amul Unsalted Butter",
+      "brand": "Amul",
+      "category": "Dairy",
+      "description": "Creamy unsalted table butter — a baking and spread essential.",
+      "quantities": ["100g", "500g", "1 kg", "5 kg"]
+    },
+    {
+      "id": "KF-02",
+      "slug": "puratos-bakers-patent-flour",
+      "name": "Puratos Bakers Patent Flour",
+      "brand": "Puratos",
+      "category": "Baking Essentials",
+      "description": "Fine-milled patent flour for consistent breads, cakes and pastries.",
+      "quantities": ["1 kg", "10 kg", "25 kg", "50 kg"]
+    },
+    {
+      "id": "KF-03",
+      "slug": "callebaut-dark-chocolate-callets",
+      "name": "Callebaut Dark Chocolate Callets",
+      "brand": "Callebaut",
+      "category": "Chocolate",
+      "description": "Belgian 54% dark couverture callets for ganache, coatings and desserts.",
+      "quantities": ["500g", "1 kg", "2.5 kg", "5 kg"]
+    },
+    {
+      "id": "KF-04",
+      "slug": "callebaut-roasted-cocoa-nibs",
+      "name": "Callebaut Roasted Cocoa Nibs",
+      "brand": "Callebaut",
+      "category": "Chocolate",
+      "description": "Crunchy roasted cocoa nibs for garnishing, baking and bean-to-bar menus.",
+      "quantities": ["250g", "500g", "1 kg"]
+    },
+    {
+      "id": "KF-05",
+      "slug": "milk-mist-mozzarella-cheese",
+      "name": "Milk Mist Mozzarella Cheese",
+      "brand": "Milk Mist",
+      "category": "Dairy",
+      "description": "Stretchy, melt-perfect mozzarella for pizzas, bakes and sandwiches.",
+      "quantities": ["200g", "1 kg", "2 kg"]
+    },
+    {
+      "id": "KF-06",
+      "slug": "del-monte-caster-sugar",
+      "name": "Del Monte Caster Sugar",
+      "brand": "Del Monte",
+      "category": "Baking Essentials",
+      "description": "Fine-grain caster sugar that dissolves fast for batters, syrups and creams.",
+      "quantities": ["1 kg", "5 kg", "25 kg"]
+    },
+    {
+      "id": "KF-07",
+      "slug": "tropilite-non-dairy-whipping-cream",
+      "name": "Tropilite Non-Dairy Whipping Cream",
+      "brand": "Tropilite",
+      "category": "Dairy",
+      "description": "Stable non-dairy whipping cream for frostings, mousses and toppings.",
+      "quantities": ["1 kg", "2 kg"]
+    },
+    {
+      "id": "KF-08",
+      "slug": "puratos-pure-vanilla-essence",
+      "name": "Puratos Pure Vanilla Essence",
+      "brand": "Puratos",
+      "category": "Flavours",
+      "description": "Concentrated pure vanilla flavouring for cakes, creams and beverages.",
+      "quantities": ["100ml", "500ml", "1 L"]
+    },
+    {
+      "id": "KF-09",
+      "slug": "frozen-butter-sheets",
+      "name": "Frozen Butter Sheets",
+      "brand": "Tropilite",
+      "category": "Frozen Items",
+      "description": "Ready-to-laminate frozen butter sheets for flaky croissants and puff pastry.",
+      "quantities": ["1 kg", "2 kg", "10 kg"]
+    },
+    {
+      "id": "KF-10",
+      "slug": "frozen-blueberry-puree",
+      "name": "Frozen Blueberry Puree",
+      "brand": "Del Monte",
+      "category": "Frozen Items",
+      "description": "100% fruit frozen blueberry puree for fillings, sauces and smoothies.",
+      "quantities": ["1 kg", "5 kg"]
+    },
+    {
+      "id": "KF-11",
+      "slug": "frozen-french-fries",
+      "name": "Frozen French Fries",
+      "brand": "Del Monte",
+      "category": "Frozen Items",
+      "description": "Uniform-cut frozen fries — fry straight from frozen for crisp results.",
+      "quantities": ["2.5 kg", "5 kg"]
+    },
+    {
+  "id": "spike-new",
+  "slug": "new-product-added-later",
+  "name": "New Product Added Later",
+  "brand": "Spike Demo",
+  "category": "Prototype",
+  "description": "Added after the static build.",
+  "image": "",
+  "quantities": ["1 unit"]
+}
+  ]
+}
