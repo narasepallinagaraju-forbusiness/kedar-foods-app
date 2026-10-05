@@ -10,6 +10,7 @@ import OfferPopup from '@/components/kedar/OfferPopup'
 import { useProducts } from '@/lib/useProducts'
 import { useSiteOffer } from '@/lib/useSiteOffer'
 import { buildGeneralWaLink, buildWaLink, getQuantities, TOP_BRANDS } from '@/lib/data'
+import { getProductSlug } from '../scripts/product-links.js'
 
 const STYLES = [
   {
@@ -65,7 +66,11 @@ function HeroCarousel({ slides }) {
               <span className="rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-semibold backdrop-blur">{getQuantities(p)[0]}</span>
               <span className="rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-semibold backdrop-blur">{p.category}</span>
             </div>
-            <h3 className="text-2xl font-extrabold leading-tight sm:text-3xl">{p.name}</h3>
+            <h3 className="text-2xl font-extrabold leading-tight sm:text-3xl">
+              <a href={`/products/${encodeURIComponent(getProductSlug(p))}`} className="hover:text-amber-300">
+                {p.name}
+              </a>
+            </h3>
             <p className="mt-1 max-w-md text-sm text-white/80">{p.description}</p>
             <a
               href={buildWaLink(p)}

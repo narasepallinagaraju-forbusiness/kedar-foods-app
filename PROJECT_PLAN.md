@@ -753,3 +753,75 @@ Do not change code.
 Do not create infrastructure.
 Stop after the audit report.
 ```
+## 21. Product model decisions (override sections 6, 10 and 11 where they conflict)
+
+Product fields: productId (immutable), sku (from existing id, e.g. KF-01), slug, name,
+brand, category, businessType[] (Bakery/Cafe/Restaurant), quantities[] (pack sizes),
+description, image {card, main} (final media/ keys), isTrending, sortRank (optional),
+status, version, createdAt, updatedAt, createdBy, updatedBy.
+Not in Phase 1: modelId, shortDescription, specifications, variants,
+customizationOptions, prices, image gallery. They can be added later as optional fields.
+
+Catalog index item: id, sku, slug, name, brand, category, businessType[], quantities[],
+thumbnailKey, isTrending, searchText (name + brand + category), sortRank.
+Search matches name, brand and category only. Filters: businessType, brand, category
+(OR within a group, AND across groups). Default sort: isTrending first, then sortRank.
+Add Load More (12–24 cards); current catalogue has no pagination.
+
+Detail API allowlist: id, sku, name, slug, brand, category, businessType, quantities,
+description, image keys, updatedAt.
+
+Categories seeded into SiteConfig from the current fixed list. Brands are derived from
+products. Business types and TOP_BRANDS stay in code in Phase 1.
+WhatsApp number and message template come from SiteConfig.
+
+CloudFront Function: also rewrite every other extensionless page path to {path}.html,
+excluding /_next/, /data/, /media/ and paths with a file extension. Unknown pages return
+a real 404 page with status 404 via a custom error response. Never fall back to the shell
+except for /products/<slug>.
+
+Seed script maps old id → sku, generates productId and slug, and uploads images to the
+media bucket (card + main) under final keys.
+
+Before the first PUBLIC deploy, the admin login must be replaced or disabled.
+## 22. Routing and slug rules (from Phase 0)
+
+- Slugs must match ^[a-z0-9]+(-[a-z0-9]+)*$. The admin API rejects anything else
+  (a dot would make the edge treat the slug as a file extension).
+- scripts/cloudfront-routing-function.js is the single source of truth for the edge
+  function. CDK loads it with FunctionCode.fromFile(); the logic is never copied.
+- The CloudFront custom error response (403/404 → /404.html, status 404) has an
+  error-caching TTL of 10 seconds or less, so new uploads/indexes are not served as
+  cached 404s. It applies distribution-wide, including /data/* and /media/*.
+- /products and /products/ return 404 for now (optional redirect to /catalogue later).
+
+## 23. Language decision: Python for infrastructure and backend
+
+- AWS CDK v2 in Python (aws-cdk-lib), Python 3.12, virtualenv at infra/.venv.
+  The CDK CLI (Node) is still required. cdk.json uses "app": "python app.py".
+- Lambda handlers in Python 3.12 under api/ (boto3; pydantic for input validation;
+  replaces the zod and "TypeScript strict" references in sections 9, 17 and 19).
+- Tooling: pytest (including CDK assertion tests), ruff (lint/format), mypy
+  (type hints required on all new Python code).
+- The Next.js frontend stays JavaScript.
+- Lambda dependencies must be packaged for the Lambda runtime (Linux). Prefer boto3
+  (already in the runtime) and pydantic as the only extra dependency, and decide the
+  bundling approach (PythonFunction with Docker, or a pre-built layer) in the plan
+  step for BackendStack, not now.
+- All other rules in this plan (buckets, CloudFront, auth, upload flow) are unchanged.
+
+## 24. Single-environment start
+
+- The first deployment is "prod" (context env=prod; stack names Frontend-prod,
+  Backend-prod). A dev replica is created later with the same code via -c env=dev.
+- No hardcoded physical resource names. Use CDK-generated names, and add an environment
+  suffix wherever a fixed name is required (for example the Cognito domain prefix).
+- Deploys are manual from the developer machine, with cdk diff reviewed first.
+  No GitHub Actions deploy to prod until BackendStack exists, and then only with
+  manual approval.
+- Until acceptance tests pass, the site is served on the default CloudFront URL and
+  not announced. The custom domain is added last through context.
+- Before the first deploy: AWS Budget alerts at $5/$10/$25/$50 exist, and the admin
+  login is replaced by a placeholder page.
+- A dev replica must exist before Phase 2 (e-commerce) work, and before any risky
+  change once real products or users exist in prod.
