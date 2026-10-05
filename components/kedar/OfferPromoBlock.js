@@ -14,7 +14,7 @@ export default function OfferPromoBlock({ offer, loaded }) {
     .filter(Boolean)
 
   return (
-    <section className="border-b border-amber-100 bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50">
+    <section className="dark-promo-block border-b border-amber-100 bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50">
       <div className="mx-auto grid max-w-7xl items-center gap-6 px-4 py-6 sm:px-6 md:grid-cols-2 md:py-8">
         {/* Poster */}
         <div className="flex justify-center">

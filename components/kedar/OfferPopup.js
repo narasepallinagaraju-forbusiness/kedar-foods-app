@@ -36,7 +36,7 @@ export default function OfferPopup({ offer, loaded }) {
         <button
           onClick={close}
           aria-label="Close offer"
-          className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-gray-700 shadow transition hover:bg-white"
+          className="offer-popup-close absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-gray-700 shadow transition hover:bg-white"
         >
           <X className="h-5 w-5" />
         </button>

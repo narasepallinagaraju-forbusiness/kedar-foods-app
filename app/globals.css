@@ -3996,3 +3996,117 @@ code {
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }
+
+html.dark-theme {
+  color-scheme: dark;
+  background: #0b0f14;
+}
+
+html.dark-theme body {
+  background-color: #0b0f14;
+  color: #f3f4f6;
+}
+
+html.dark-theme [class~="bg-white"] {
+  background-color: #111827;
+}
+
+html.dark-theme [class~="bg-gray-50"] {
+  background-color: #111827;
+}
+
+html.dark-theme [class~="bg-gray-100"] {
+  background-color: #1f2937;
+}
+
+html.dark-theme [class~="bg-gray-200"] {
+  background-color: #374151;
+}
+
+html.dark-theme [class~="bg-gray-300"] {
+  background-color: #4b5563;
+}
+
+html.dark-theme [class~="bg-white/80"],
+html.dark-theme [class~="bg-white/90"],
+html.dark-theme [class~="bg-white/95"] {
+  background-color: rgb(31 41 55 / 90%);
+}
+
+html.dark-theme [class~="hover:bg-white"]:hover,
+html.dark-theme [class~="hover:bg-gray-50"]:hover {
+  background-color: #374151;
+}
+
+html.dark-theme [class~="text-gray-900"] {
+  color: #f9fafb;
+}
+
+html.dark-theme [class~="text-gray-800"] {
+  color: #f3f4f6;
+}
+
+html.dark-theme [class~="text-gray-700"] {
+  color: #e5e7eb;
+}
+
+html.dark-theme [class~="text-gray-600"] {
+  color: #d1d5db;
+}
+
+html.dark-theme [class~="text-gray-500"] {
+  color: #9ca3af;
+}
+
+html.dark-theme [class~="text-gray-400"] {
+  color: #9ca3af;
+}
+
+html.dark-theme [class~="text-gray-300"] {
+  color: #6b7280;
+}
+
+html.dark-theme [class~="text-amber-700"] {
+  color: #fbbf24;
+}
+
+html.dark-theme [class~="border-gray-100"],
+html.dark-theme [class~="border-gray-200"],
+html.dark-theme [class~="border-gray-300"] {
+  border-color: #374151;
+}
+
+html.dark-theme header[class~="bg-white/90"] {
+  background-color: rgb(17 24 39 / 94%);
+}
+
+html.dark-theme .admin-login-background {
+  background-image: linear-gradient(135deg, #111827, #0b0f14);
+}
+
+html.dark-theme .dark-promo-block {
+  border-color: #374151;
+  background-image: linear-gradient(110deg, #111827, #1f2937 50%, #111827);
+}
+
+html.dark-theme .offer-popup-close {
+  background-color: #374151;
+  color: #f3f4f6;
+}
+
+html.dark-theme .offer-popup-close:hover {
+  background-color: #4b5563;
+}
+
+html.dark-theme input,
+html.dark-theme textarea,
+html.dark-theme select {
+  background-color: #1f2937;
+  border-color: #4b5563;
+  color: #f3f4f6;
+}
+
+html.dark-theme input::placeholder,
+html.dark-theme textarea::placeholder {
+  color: #9ca3af;
+}

@@ -23,7 +23,7 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-amber-50 px-4">
+    <div className="admin-login-background flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-amber-50 px-4">
       <div className="w-full max-w-sm">
         <Link href="/" className="mb-6 flex items-center justify-center gap-2">
           <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500 text-white">
