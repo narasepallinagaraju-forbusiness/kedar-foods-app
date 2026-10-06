@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test:routing": "node scripts/test-routing-function.mjs",
-    "test:infra": "pytest infra/tests"
+    "test:infra": "pytest infra/tests",
+    "deploy:frontend": "powershell -ExecutionPolicy Bypass -File scripts/deploy-frontend.ps1 -Env prod"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.104.1",

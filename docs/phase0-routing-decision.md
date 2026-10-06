@@ -104,6 +104,21 @@ works.
 
 ## Admin deployment warning
 
-The existing admin login is a temporary client-side check, not secure
-authentication or authorization. It must be replaced with the planned protected
-authentication/API flow or disabled before the first public deployment.
+The existing admin login is a temporary client-side demo check and is deployed
+as-is during Phase 1 hosting. Its password must be unique and unused elsewhere.
+It must be replaced by Cognito before any admin API is connected in Phase 3.
+
+## Phase 1 CloudFront verification (2026-10-06)
+
+All routing cases passed against the deployed CloudFront distribution:
+
+- `/`, `/catalogue`, `/admin`, and `/admin/dashboard` return status 200 with
+  `text/html`.
+- `/products/_shell.html` and `/products/<slug>` return the same product shell
+  with status 200, including a new slug, an uppercase slug, and a trailing
+  slash.
+- Unknown pages, `/products/photo.png`, and missing objects under `/data/*`
+  and `/media/*` return the real 404 page with status 404.
+- Browser and mobile navigation were checked manually.
+
+Product data loading has not yet been verified because the API does not exist.
