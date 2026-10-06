@@ -1,0 +1,49 @@
+"""CDK application entry point for the frontend infrastructure."""
+
+from __future__ import annotations
+
+import os
+from collections.abc import Mapping
+
+from aws_cdk import App, Environment, Tags
+
+from frontend_stack import FrontendStack
+
+
+def _get_environment_name(value: object) -> str:
+    if value is None:
+        return "prod"
+    if value not in ("prod", "dev"):
+        raise ValueError(
+            f"Invalid env context value {value!r}; expected 'prod' or 'dev'."
+        )
+    return str(value)
+
+
+def create_app(context: Mapping[str, str] | None = None) -> App:
+    app = App(context=dict(context) if context is not None else None)
+    env_name = _get_environment_name(app.node.try_get_context("env"))
+    domain_name = app.node.try_get_context("domainName")
+    certificate_arn = app.node.try_get_context("certificateArn")
+    site_origin = app.node.try_get_context("siteOrigin")
+
+    stack = FrontendStack(
+        app,
+        f"kedar-foods-app-{env_name}-frontend",
+        env_name=env_name,
+        domain_name=domain_name,
+        certificate_arn=certificate_arn,
+        site_origin=site_origin,
+        env=Environment(
+            account=os.environ.get("CDK_DEFAULT_ACCOUNT"),
+            region="ap-south-1",
+        ),
+        termination_protection=env_name == "prod",
+    )
+    Tags.of(stack).add("Project", "kedar-foods-app")
+    Tags.of(stack).add("Env", env_name)
+    return app
+
+
+if __name__ == "__main__":
+    create_app().synth()

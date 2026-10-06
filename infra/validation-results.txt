@@ -1,0 +1,1418 @@
+﻿Frontend infrastructure validation
+Started: 2026-10-06T11:11:50.4817630+05:30
+
+> infra\.venv\Scripts\ruff.exe check infra
+All checks passed!
+Exit code: 0
+
+> infra\.venv\Scripts\mypy.exe infra
+Success: no issues found in 3 source files
+Exit code: 0
+
+> infra\.venv\Scripts\pytest.exe infra\tests
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-8.4.2, pluggy-1.6.0
+rootdir: D:\GitRepo\kedar-foods-app\infra
+configfile: pyproject.toml
+plugins: typeguard-2.13.3
+collected 26 items
+
+
+============================= 26 passed in 12.54s =============================
+Exit code: 0
+
+> node scripts/test-routing-function.mjs
+PASS / -> /index.html
+PASS /catalogue -> /catalogue.html
+PASS /catalogue/ -> /catalogue.html
+PASS /admin -> /admin.html
+PASS /admin/dashboard -> /admin/dashboard.html
+PASS /products/amul-unsalted-butter -> /products/_shell.html
+PASS /products/amul-unsalted-butter/ -> /products/_shell.html
+PASS /products/ -> /products.html
+PASS /catalogue// -> /catalogue.html
+PASS /products/Amul-Butter -> /products/_shell.html
+PASS /products/does-not-exist -> /products/_shell.html
+PASS /products/_shell.html -> /products/_shell.html
+PASS /products/photo.png -> /products/photo.png
+PASS /products/a/b -> /products/a/b.html
+PASS /products -> /products.html
+PASS /_next/static/chunks/a.js -> /_next/static/chunks/a.js
+PASS /data/catalog-index.json -> /data/catalog-index.json
+PASS /media/products/a/main-v1.webp -> /media/products/a/main-v1.webp
+PASS /favicon.ico -> /favicon.ico
+PASS build page /404.html -> /404.html
+PASS build page /admin/dashboard -> /admin/dashboard.html
+PASS build page /admin -> /admin.html
+PASS build page /catalogue -> /catalogue.html
+PASS build page / -> /index.html
+PASS build page /products/_shell -> /products/_shell.html
+PASS build page /_not-found -> /_not-found.html
+PASS custom error page out/404.html exists
+All 19 routing cases passed.
+Exit code: 0
+
+> cdk synth -c env=prod
+(node:18028) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Resources:
+  FrontendBucketEFE2E19C:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: kedar-foods-app-prod-frontend
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: Env
+          Value: prod
+        - Key: Project
+          Value: kedar-foods-app
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Metadata:
+      aws:cdk:path: kedar-foods-app-prod-frontend/FrontendBucket/Resource
+  FrontendBucketPolicy1DFF75D9:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket:
+        Ref: FrontendBucketEFE2E19C
+      PolicyDocument:
+        Statement:
+          - Action: s3:*
+            Condition:
+              Bool:
+                aws:SecureTransport: "false"
+            Effect: Deny
+            Principal:
+              AWS: "*"
+            Resource:
+              - Fn::GetAtt:
+                  - FrontendBucketEFE2E19C
+                  - Arn
+              - Fn::Join:
+                  - ""
+                  - - Fn::GetAtt:
+                        - FrontendBucketEFE2E19C
+                        - Arn
+                    - /*
+          - Action: s3:GetObject
+            Condition:
+              StringEquals:
+                AWS:SourceArn:
+                  Fn::Join:
+                    - ""
+                    - - "arn:"
+                      - Ref: AWS::Partition
+                      - ":cloudfront::"
+                      - Ref: AWS::AccountId
+                      - :distribution/
+                      - Ref: Distribution830FAC52
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Resource:
+              Fn::Join:
+                - ""
+                - - Fn::GetAtt:
+                      - FrontendBucketEFE2E19C
+                      - Arn
+                  - /*
+        Version: "2012-10-17"
+    Metadata:
+      aws:cdk:path: kedar-foods-app-prod-frontend/FrontendBucket/Policy/Resource
+  DataMediaBucket6E8238AC:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: kedar-foods-app-prod-data-media
+      LifecycleConfiguration:
+        Rules:
+          - AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 1
+            ExpirationInDays: 7
+            Prefix: incoming/
+            Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: Env
+          Value: prod
+        - Key: Project
+          Value: kedar-foods-app
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Metadata:
+      aws:cdk:path: kedar-foods-app-prod-frontend/DataMediaBucket/Resource
+  DataMediaBucketPolicyEDD32A0F:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket:
+        Ref: DataMediaBucket6E8238AC
+      PolicyDocument:
+        Statement:
+          - Action: s3:*
+            Condition:
+              Bool:
+                aws:SecureTransport: "false"
+            Effect: Deny
+            Principal:
+              AWS: "*"
+            Resource:
+              - Fn::GetAtt:
+                  - DataMediaBucket6E8238AC
+                  - Arn
+              - Fn::Join:
+                  - ""
+                  - - Fn::GetAtt:
+                        - DataMediaBucket6E8238AC
+                        - Arn
+                    - /*
+          - Action: s3:GetObject
+            Condition:
+              StringEquals:
+                AWS:SourceArn:
+                  Fn::Join:
+                    - ""
+                    - - "arn:"
+                      - Ref: AWS::Partition
+                      - ":cloudfront::"
+                      - Ref: AWS::AccountId
+                      - :distribution/
+                      - Ref: Distribution830FAC52
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Resource:
+              Fn::Join:
+                - ""
+                - - Fn::GetAtt:
+                      - DataMediaBucket6E8238AC
+                      - Arn
+                  - /*
+        Version: "2012-10-17"
+    Metadata:
+      aws:cdk:path: kedar-foods-app-prod-frontend/DataMediaBucket/Policy/Resource
+  FrontendOACB94BB8F4:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: kedar-foods-app-prod-oac-frontend
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+    Metadata:
+      aws:cdk:path: kedar-foods-app-prod-frontend/FrontendOAC/Resource
+  DataMediaOAC4BDF6174:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: kedar-foods-app-prod-oac-data-media
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+    Metadata:
+      aws:cdk:path: kedar-foods-app-prod-frontend/DataMediaOAC/Resource
+  HtmlCachePolicy9A5E4D6F:
+    Type: AWS::CloudFront::CachePolicy
+    Properties:
+      CachePolicyConfig:
+        DefaultTTL: 60
+        MaxTTL: 300
+        MinTTL: 0
+        Name: kedar-foods-app-prod-cache-html
+        ParametersInCacheKeyAndForwardedToOrigin:
+          CookiesConfig:
+            CookieBehavior: none
+          EnableAcceptEncodingBrotli: true
+          EnableAcceptEncodingGzip: true
+          HeadersConfig:
+            HeaderBehavior: none
+          QueryStringsConfig:
+            QueryStringBehavior: none
+    Metadata:
+      aws:cdk:path: kedar-foods-app-prod-frontend/HtmlCachePolicy/Resource
+  DataCachePolicy6B8D1C88:
+    Type: AWS::CloudFront::CachePolicy
+    Properties:
+      CachePolicyConfig:
+        DefaultTTL: 60
+        MaxTTL: 300
+        MinTTL: 0
+        Name: kedar-foods-app-prod-cache-data
+        ParametersInCacheKeyAndForwardedToOrigin:
+          CookiesConfig:
+            CookieBehavior: none
+          EnableAcceptEncodingBrotli: true
+          EnableAcceptEncodingGzip: true
+          HeadersConfig:
+            HeaderBehavior: none
+          QueryStringsConfig:
+            QueryStringBehavior: none
+    Metadata:
+      aws:cdk:path: kedar-foods-app-prod-frontend/DataCachePolicy/Resource
+  ImmutableCachePolicy3D6B0A97:
+    Type: AWS::CloudFront::CachePolicy
+    Properties:
+      CachePolicyConfig:
+        DefaultTTL: 31536000
+        MaxTTL: 31536000
+        MinTTL: 31536000
+        Name: kedar-foods-app-prod-cache-immutable
+        ParametersInCacheKeyAndForwardedToOrigin:
+          CookiesConfig:
+            CookieBehavior: none
+          EnableAcceptEncodingBrotli: true
+          EnableAcceptEncodingGzip: true
+          HeadersConfig:
+            HeaderBehavior: none
+          QueryStringsConfig:
+            QueryStringBehavior: none
+    Metadata:
+      aws:cdk:path: kedar-foods-app-prod-frontend/ImmutableCachePolicy/Resource
+  ResponseHeadersPolicy13DBF9E0:
+    Type: AWS::CloudFront::ResponseHeadersPolicy
+    Properties:
+      ResponseHeadersPolicyConfig:
+        CustomHeadersConfig:
+          Items:
+            - Header: Permissions-Policy
+              Override: true
+              Value: camera=(), microphone=(), geolocation=()
+            - Header: Content-Security-Policy-Report-Only
+              Override: true
+              Value: default-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'
+        Name: kedar-foods-app-prod-response-headers
+        SecurityHeadersConfig:
+          ContentTypeOptions:
+            Override: true
+          FrameOptions:
+            FrameOption: DENY
+            Override: true
+          ReferrerPolicy:
+            Override: true
+            ReferrerPolicy: strict-origin-when-cross-origin
+          StrictTransportSecurity:
+            AccessControlMaxAgeSec: 31536000
+            IncludeSubdomains: false
+            Override: true
+            Preload: false
+    Metadata:
+      aws:cdk:path: kedar-foods-app-prod-frontend/ResponseHeadersPolicy/Resource
+  RoutingFunctionC57575D2:
+    Type: AWS::CloudFront::Function
+    Properties:
+      AutoPublish: true
+      FunctionCode: "function handler(event) {\r
+
+        \  var request = event.request;\r
+
+        \  var uri = request.uri;\r
+
+        \r
+
+        \  if (uri !== '/') {\r
+
+        \    uri = uri.replace(/\\/+$/, '');\r
+
+        \    if (uri === '') {\r
+
+        \      uri = '/';\r
+
+        \    }\r
+
+        \    request.uri = uri;\r
+
+        \  }\r
+
+        \r
+
+        \  if (\r
+
+        \    uri.indexOf('/_next/') === 0 ||\r
+
+        \    uri.indexOf('/data/') === 0 ||\r
+
+        \    uri.indexOf('/media/') === 0\r
+
+        \  ) {\r
+
+        \    return request;\r
+
+        \  }\r
+
+        \r
+
+        \  if (uri === '/') {\r
+
+        \    request.uri = '/index.html';\r
+
+        \    return request;\r
+
+        \  }\r
+
+        \r
+
+        \  var productMatch = uri.match(/^\\/products\\/([^/]+)$/);\r
+
+        \  if (productMatch && productMatch[1].indexOf('.') === -1) {\r
+
+        \    request.uri = '/products/_shell.html';\r
+
+        \    return request;\r
+
+        \  }\r
+
+        \r
+
+        \  var lastSegment = uri.substring(uri.lastIndexOf('/') + 1);\r
+
+        \  if (lastSegment.indexOf('.') !== -1) {\r
+
+        \    return request;\r
+
+        \  }\r
+
+        \r
+
+        \  request.uri = uri.replace(/\\/+$/, '') + '.html';\r
+
+        \  return request;\r
+
+        }\r\n"
+      FunctionConfig:
+        Comment: kedar-foods-app-prod-routing
+        Runtime: cloudfront-js-2.0
+      Name: kedar-foods-app-prod-routing
+    Metadata:
+      aws:cdk:path: kedar-foods-app-prod-frontend/RoutingFunction/Resource
+  Distribution830FAC52:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        CacheBehaviors:
+          - CachePolicyId:
+              Ref: DataCachePolicy6B8D1C88
+            Compress: true
+            PathPattern: /data/*
+            ResponseHeadersPolicyId:
+              Ref: ResponseHeadersPolicy13DBF9E0
+            TargetOriginId: kedarfoodsappprodfrontendDistributionOrigin257793FE6
+            ViewerProtocolPolicy: redirect-to-https
+          - CachePolicyId:
+              Ref: ImmutableCachePolicy3D6B0A97
+            Compress: true
+            PathPattern: /media/*
+            ResponseHeadersPolicyId:
+              Ref: ResponseHeadersPolicy13DBF9E0
+            TargetOriginId: kedarfoodsappprodfrontendDistributionOrigin257793FE6
+            ViewerProtocolPolicy: redirect-to-https
+          - CachePolicyId:
+              Ref: ImmutableCachePolicy3D6B0A97
+            Compress: true
+            PathPattern: /_next/*
+            ResponseHeadersPolicyId:
+              Ref: ResponseHeadersPolicy13DBF9E0
+            TargetOriginId: kedarfoodsappprodfrontendDistributionOrigin1AA8613BD
+            ViewerProtocolPolicy: redirect-to-https
+        CustomErrorResponses:
+          - ErrorCachingMinTTL: 10
+            ErrorCode: 403
+            ResponseCode: 404
+            ResponsePagePath: /404.html
+          - ErrorCachingMinTTL: 10
+            ErrorCode: 404
+            ResponseCode: 404
+            ResponsePagePath: /404.html
+        DefaultCacheBehavior:
+          CachePolicyId:
+            Ref: HtmlCachePolicy9A5E4D6F
+          Compress: true
+          FunctionAssociations:
+            - EventType: viewer-request
+              FunctionARN:
+                Fn::GetAtt:
+                  - RoutingFunctionC57575D2
+                  - FunctionARN
+          ResponseHeadersPolicyId:
+            Ref: ResponseHeadersPolicy13DBF9E0
+          TargetOriginId: kedarfoodsappprodfrontendDistributionOrigin1AA8613BD
+          ViewerProtocolPolicy: redirect-to-https
+        Enabled: true
+        HttpVersion: http2
+        IPV6Enabled: true
+        Origins:
+          - DomainName:
+              Fn::GetAtt:
+                - FrontendBucketEFE2E19C
+                - RegionalDomainName
+            Id: kedarfoodsappprodfrontendDistributionOrigin1AA8613BD
+            OriginAccessControlId:
+              Fn::GetAtt:
+                - FrontendOACB94BB8F4
+                - Id
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+          - DomainName:
+              Fn::GetAtt:
+                - DataMediaBucket6E8238AC
+                - RegionalDomainName
+            Id: kedarfoodsappprodfrontendDistributionOrigin257793FE6
+            OriginAccessControlId:
+              Fn::GetAtt:
+                - DataMediaOAC4BDF6174
+                - Id
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+        PriceClass: PriceClass_200
+      Tags:
+        - Key: Env
+          Value: prod
+        - Key: Project
+          Value: kedar-foods-app
+    Metadata:
+      aws:cdk:path: kedar-foods-app-prod-frontend/Distribution/Resource
+  CDKMetadata:
+    Type: AWS::CDK::Metadata
+    Properties:
+      Analytics: v2:deflate64:H4sIAAAAAAAA/21OSw6CQAw9C3sY+ZzAT4w7CR7ADGWUCnbItBNDCHc3iooLVu/bl6YqTWMVB/rBEVRN1GKphpNoaEL94PPAmRo2Hhoj4fZCHzZBbluEfrYnPYbQWl9dnCVRwyk7OrwirQEM89aSONu+ThZtDbWZV/9lYbizxOZgdGUcz6XlYO8JBC29Gj++QxaHpf8G/3oc30956byMYd5LbWmVqSRVSRzcGDFyngTvRhUTPgEqfGI5OAEAAA==
+    Metadata:
+      aws:cdk:path: kedar-foods-app-prod-frontend/CDKMetadata/Default
+Outputs:
+  FrontendBucketName:
+    Value:
+      Ref: FrontendBucketEFE2E19C
+  DataMediaBucketName:
+    Value:
+      Ref: DataMediaBucket6E8238AC
+  DistributionId:
+    Value:
+      Ref: Distribution830FAC52
+  SiteDomain:
+    Value:
+      Fn::GetAtt:
+        - Distribution830FAC52
+        - DomainName
+Parameters:
+  BootstrapVersion:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /cdk-bootstrap/hnb659fds/version
+    Description: Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]
+
+72 feature flags are not configured. Run 'cdk flags --unstable=flags' to learn more.
+Exit code: 0
+
+> cdk synth -c env=prod -c domainName=example.com -c certificateArn=arn:aws:acm:us-east-1:123456789012:certificate/00000000-0000-0000-0000-000000000000
+(node:15156) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Resources:
+  FrontendBucketEFE2E19C:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: kedar-foods-app-prod-frontend
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: Env
+          Value: prod
+        - Key: Project
+          Value: kedar-foods-app
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Metadata:
+      aws:cdk:path: kedar-foods-app-prod-frontend/FrontendBucket/Resource
+  FrontendBucketPolicy1DFF75D9:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket:
+        Ref: FrontendBucketEFE2E19C
+      PolicyDocument:
+        Statement:
+          - Action: s3:*
+            Condition:
+              Bool:
+                aws:SecureTransport: "false"
+            Effect: Deny
+            Principal:
+              AWS: "*"
+            Resource:
+              - Fn::GetAtt:
+                  - FrontendBucketEFE2E19C
+                  - Arn
+              - Fn::Join:
+                  - ""
+                  - - Fn::GetAtt:
+                        - FrontendBucketEFE2E19C
+                        - Arn
+                    - /*
+          - Action: s3:GetObject
+            Condition:
+              StringEquals:
+                AWS:SourceArn:
+                  Fn::Join:
+                    - ""
+                    - - "arn:"
+                      - Ref: AWS::Partition
+                      - ":cloudfront::"
+                      - Ref: AWS::AccountId
+                      - :distribution/
+                      - Ref: Distribution830FAC52
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Resource:
+              Fn::Join:
+                - ""
+                - - Fn::GetAtt:
+                      - FrontendBucketEFE2E19C
+                      - Arn
+                  - /*
+        Version: "2012-10-17"
+    Metadata:
+      aws:cdk:path: kedar-foods-app-prod-frontend/FrontendBucket/Policy/Resource
+  DataMediaBucket6E8238AC:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: kedar-foods-app-prod-data-media
+      LifecycleConfiguration:
+        Rules:
+          - AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 1
+            ExpirationInDays: 7
+            Prefix: incoming/
+            Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: Env
+          Value: prod
+        - Key: Project
+          Value: kedar-foods-app
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Metadata:
+      aws:cdk:path: kedar-foods-app-prod-frontend/DataMediaBucket/Resource
+  DataMediaBucketPolicyEDD32A0F:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket:
+        Ref: DataMediaBucket6E8238AC
+      PolicyDocument:
+        Statement:
+          - Action: s3:*
+            Condition:
+              Bool:
+            Principal:
+              AWS: "*"
+            Resource:
+              - Fn::GetAtt:
+                  - DataMediaBucket6E8238AC
+                  - Arn
+              - Fn::Join:
+                  - ""
+                  - - Fn::GetAtt:
+                        - DataMediaBucket6E8238AC
+                        - Arn
+                    - /*
+          - Action: s3:GetObject
+            Condition:
+              StringEquals:
+                AWS:SourceArn:
+                  Fn::Join:
+                    - ""
+                    - - "arn:"
+                      - Ref: AWS::Partition
+                      - ":cloudfront::"
+                      - Ref: AWS::AccountId
+                      - :distribution/
+                      - Ref: Distribution830FAC52
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Resource:
+              Fn::Join:
+                - ""
+                - - Fn::GetAtt:
+                      - DataMediaBucket6E8238AC
+                      - Arn
+                  - /*
+        Version: "2012-10-17"
+    Metadata:
+      aws:cdk:path: kedar-foods-app-prod-frontend/DataMediaBucket/Policy/Resource
+  FrontendOACB94BB8F4:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: kedar-foods-app-prod-oac-frontend
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+    Metadata:
+      aws:cdk:path: kedar-foods-app-prod-frontend/FrontendOAC/Resource
+  DataMediaOAC4BDF6174:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: kedar-foods-app-prod-oac-data-media
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+    Metadata:
+      aws:cdk:path: kedar-foods-app-prod-frontend/DataMediaOAC/Resource
+  HtmlCachePolicy9A5E4D6F:
+    Type: AWS::CloudFront::CachePolicy
+    Properties:
+      CachePolicyConfig:
+        DefaultTTL: 60
+        MaxTTL: 300
+        MinTTL: 0
+        Name: kedar-foods-app-prod-cache-html
+        ParametersInCacheKeyAndForwardedToOrigin:
+          CookiesConfig:
+            CookieBehavior: none
+          EnableAcceptEncodingBrotli: true
+          EnableAcceptEncodingGzip: true
+          HeadersConfig:
+            HeaderBehavior: none
+          QueryStringsConfig:
+            QueryStringBehavior: none
+    Metadata:
+      aws:cdk:path: kedar-foods-app-prod-frontend/HtmlCachePolicy/Resource
+  DataCachePolicy6B8D1C88:
+    Type: AWS::CloudFront::CachePolicy
+    Properties:
+      CachePolicyConfig:
+        DefaultTTL: 60
+        MaxTTL: 300
+        MinTTL: 0
+        Name: kedar-foods-app-prod-cache-data
+        ParametersInCacheKeyAndForwardedToOrigin:
+          CookiesConfig:
+            CookieBehavior: none
+          EnableAcceptEncodingBrotli: true
+          EnableAcceptEncodingGzip: true
+          HeadersConfig:
+            HeaderBehavior: none
+          QueryStringsConfig:
+            QueryStringBehavior: none
+    Metadata:
+      aws:cdk:path: kedar-foods-app-prod-frontend/DataCachePolicy/Resource
+  ImmutableCachePolicy3D6B0A97:
+    Type: AWS::CloudFront::CachePolicy
+    Properties:
+      CachePolicyConfig:
+        DefaultTTL: 31536000
+        MaxTTL: 31536000
+        MinTTL: 31536000
+        Name: kedar-foods-app-prod-cache-immutable
+        ParametersInCacheKeyAndForwardedToOrigin:
+          CookiesConfig:
+            CookieBehavior: none
+          EnableAcceptEncodingBrotli: true
+          EnableAcceptEncodingGzip: true
+          HeadersConfig:
+            HeaderBehavior: none
+          QueryStringsConfig:
+            QueryStringBehavior: none
+    Metadata:
+      aws:cdk:path: kedar-foods-app-prod-frontend/ImmutableCachePolicy/Resource
+  ResponseHeadersPolicy13DBF9E0:
+    Type: AWS::CloudFront::ResponseHeadersPolicy
+    Properties:
+      ResponseHeadersPolicyConfig:
+        CustomHeadersConfig:
+          Items:
+            - Header: Permissions-Policy
+              Override: true
+              Value: camera=(), microphone=(), geolocation=()
+            - Header: Content-Security-Policy-Report-Only
+              Override: true
+              Value: default-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'
+        Name: kedar-foods-app-prod-response-headers
+        SecurityHeadersConfig:
+          ContentTypeOptions:
+            Override: true
+          FrameOptions:
+            FrameOption: DENY
+            Override: true
+          ReferrerPolicy:
+            Override: true
+            ReferrerPolicy: strict-origin-when-cross-origin
+          StrictTransportSecurity:
+            AccessControlMaxAgeSec: 31536000
+            IncludeSubdomains: false
+            Override: true
+            Preload: false
+    Metadata:
+      aws:cdk:path: kedar-foods-app-prod-frontend/ResponseHeadersPolicy/Resource
+  RoutingFunctionC57575D2:
+    Type: AWS::CloudFront::Function
+    Properties:
+      AutoPublish: true
+      FunctionCode: "function handler(event) {\r
+
+        \  var request = event.request;\r
+
+        \  var uri = request.uri;\r
+
+        \r
+
+        \  if (uri !== '/') {\r
+
+        \    uri = uri.replace(/\\/+$/, '');\r
+
+        \    if (uri === '') {\r
+
+        \      uri = '/';\r
+
+        \    }\r
+
+        \    request.uri = uri;\r
+
+        \  }\r
+
+        \r
+
+        \  if (\r
+
+        \    uri.indexOf('/_next/') === 0 ||\r
+
+        \    uri.indexOf('/data/') === 0 ||\r
+
+        \    uri.indexOf('/media/') === 0\r
+
+        \  ) {\r
+
+        \    return request;\r
+
+        \  }\r
+
+        \r
+
+        \  if (uri === '/') {\r
+
+        \    request.uri = '/index.html';\r
+
+        \    return request;\r
+
+        \  }\r
+
+        \r
+
+        \  var productMatch = uri.match(/^\\/products\\/([^/]+)$/);\r
+
+        \  if (productMatch && productMatch[1].indexOf('.') === -1) {\r
+
+        \    request.uri = '/products/_shell.html';\r
+
+        \    return request;\r
+
+        \  }\r
+
+        \r
+
+        \  var lastSegment = uri.substring(uri.lastIndexOf('/') + 1);\r
+
+        \  if (lastSegment.indexOf('.') !== -1) {\r
+
+        \    return request;\r
+
+        \  }\r
+
+        \r
+
+        \  request.uri = uri.replace(/\\/+$/, '') + '.html';\r
+
+        \  return request;\r
+
+        }\r\n"
+      FunctionConfig:
+        Comment: kedar-foods-app-prod-routing
+        Runtime: cloudfront-js-2.0
+      Name: kedar-foods-app-prod-routing
+    Metadata:
+      aws:cdk:path: kedar-foods-app-prod-frontend/RoutingFunction/Resource
+  Distribution830FAC52:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Aliases:
+          - example.com
+        CacheBehaviors:
+          - CachePolicyId:
+              Ref: DataCachePolicy6B8D1C88
+            Compress: true
+            PathPattern: /data/*
+            ResponseHeadersPolicyId:
+              Ref: ResponseHeadersPolicy13DBF9E0
+            TargetOriginId: kedarfoodsappprodfrontendDistributionOrigin257793FE6
+            ViewerProtocolPolicy: redirect-to-https
+          - CachePolicyId:
+              Ref: ImmutableCachePolicy3D6B0A97
+            Compress: true
+            PathPattern: /media/*
+            ResponseHeadersPolicyId:
+              Ref: ResponseHeadersPolicy13DBF9E0
+            TargetOriginId: kedarfoodsappprodfrontendDistributionOrigin257793FE6
+            ViewerProtocolPolicy: redirect-to-https
+          - CachePolicyId:
+              Ref: ImmutableCachePolicy3D6B0A97
+            Compress: true
+            PathPattern: /_next/*
+            ResponseHeadersPolicyId:
+              Ref: ResponseHeadersPolicy13DBF9E0
+            TargetOriginId: kedarfoodsappprodfrontendDistributionOrigin1AA8613BD
+            ViewerProtocolPolicy: redirect-to-https
+        CustomErrorResponses:
+          - ErrorCachingMinTTL: 10
+            ErrorCode: 403
+            ResponseCode: 404
+            ResponsePagePath: /404.html
+          - ErrorCachingMinTTL: 10
+            ErrorCode: 404
+            ResponseCode: 404
+            ResponsePagePath: /404.html
+        DefaultCacheBehavior:
+          CachePolicyId:
+            Ref: HtmlCachePolicy9A5E4D6F
+          Compress: true
+          FunctionAssociations:
+            - EventType: viewer-request
+              FunctionARN:
+                Fn::GetAtt:
+                  - RoutingFunctionC57575D2
+                  - FunctionARN
+          ResponseHeadersPolicyId:
+            Ref: ResponseHeadersPolicy13DBF9E0
+          TargetOriginId: kedarfoodsappprodfrontendDistributionOrigin1AA8613BD
+          ViewerProtocolPolicy: redirect-to-https
+        Enabled: true
+        HttpVersion: http2
+        IPV6Enabled: true
+        Origins:
+          - DomainName:
+              Fn::GetAtt:
+                - FrontendBucketEFE2E19C
+                - RegionalDomainName
+            Id: kedarfoodsappprodfrontendDistributionOrigin1AA8613BD
+            OriginAccessControlId:
+              Fn::GetAtt:
+                - FrontendOACB94BB8F4
+                - Id
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+          - DomainName:
+              Fn::GetAtt:
+                - DataMediaBucket6E8238AC
+                - RegionalDomainName
+            Id: kedarfoodsappprodfrontendDistributionOrigin257793FE6
+            OriginAccessControlId:
+              Fn::GetAtt:
+                - DataMediaOAC4BDF6174
+                - Id
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+        PriceClass: PriceClass_200
+        ViewerCertificate:
+          AcmCertificateArn: arn:aws:acm:us-east-1:123456789012:certificate/00000000-0000-0000-0000-000000000000
+          MinimumProtocolVersion: TLSv1.2_2021
+          SslSupportMethod: sni-only
+      Tags:
+        - Key: Env
+          Value: prod
+        - Key: Project
+          Value: kedar-foods-app
+    Metadata:
+      aws:cdk:path: kedar-foods-app-prod-frontend/Distribution/Resource
+  CDKMetadata:
+    Type: AWS::CDK::Metadata
+    Properties:
+      Analytics: v2:deflate64:H4sIAAAAAAAA/21OSw6CQAw9i3sYEU7gJ8adRg9gxlK1gq2ZdmIM4e4GUXHh6n37yV2eZy4b+bumUFZpTQfX7MxDlfi77hstXDOLUKEl8yO/WQ8bqQkeg93rNoFaYnkMwuaaXbEOdCKeAqDqXNiC1N3IX9vDGYetv3KLehNWXKEvMehQ+h8sI4ORcNf48gWpBTrET/Cr27Y7ITEAvr6LdovWJpuHnYXHhZvkbpKNLkqUhshGV3TbHp93NciHQQEAAA==
+    Metadata:
+      aws:cdk:path: kedar-foods-app-prod-frontend/CDKMetadata/Default
+Outputs:
+  FrontendBucketName:
+    Value:
+      Ref: FrontendBucketEFE2E19C
+  DataMediaBucketName:
+    Value:
+      Ref: DataMediaBucket6E8238AC
+  DistributionId:
+    Value:
+      Ref: Distribution830FAC52
+  SiteDomain:
+    Value:
+      Fn::GetAtt:
+        - Distribution830FAC52
+        - DomainName
+Parameters:
+  BootstrapVersion:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /cdk-bootstrap/hnb659fds/version
+    Description: Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]
+
+72 feature flags are not configured. Run 'cdk flags --unstable=flags' to learn more.
+Exit code: 0
+
+> cdk synth -c env=dev
+(node:7868) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Resources:
+  FrontendBucketEFE2E19C:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: kedar-foods-app-dev-frontend
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: Env
+          Value: dev
+        - Key: Project
+          Value: kedar-foods-app
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Metadata:
+      aws:cdk:path: kedar-foods-app-dev-frontend/FrontendBucket/Resource
+  FrontendBucketPolicy1DFF75D9:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket:
+        Ref: FrontendBucketEFE2E19C
+      PolicyDocument:
+        Statement:
+          - Action: s3:*
+            Condition:
+              Bool:
+                aws:SecureTransport: "false"
+            Effect: Deny
+            Principal:
+              AWS: "*"
+            Resource:
+              - Fn::GetAtt:
+                  - FrontendBucketEFE2E19C
+                  - Arn
+              - Fn::Join:
+                  - ""
+                  - - Fn::GetAtt:
+                        - FrontendBucketEFE2E19C
+                        - Arn
+                    - /*
+          - Action: s3:GetObject
+            Condition:
+              StringEquals:
+                AWS:SourceArn:
+                  Fn::Join:
+                    - ""
+                    - - "arn:"
+                      - Ref: AWS::Partition
+                      - ":cloudfront::"
+                      - Ref: AWS::AccountId
+                      - :distribution/
+                      - Ref: Distribution830FAC52
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Resource:
+              Fn::Join:
+                - ""
+                - - Fn::GetAtt:
+                      - FrontendBucketEFE2E19C
+        Version: "2012-10-17"
+    Metadata:
+      aws:cdk:path: kedar-foods-app-dev-frontend/FrontendBucket/Policy/Resource
+  DataMediaBucket6E8238AC:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: kedar-foods-app-dev-data-media
+      LifecycleConfiguration:
+        Rules:
+          - AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 1
+            ExpirationInDays: 7
+            Prefix: incoming/
+            Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: Env
+          Value: dev
+        - Key: Project
+          Value: kedar-foods-app
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Metadata:
+      aws:cdk:path: kedar-foods-app-dev-frontend/DataMediaBucket/Resource
+  DataMediaBucketPolicyEDD32A0F:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket:
+        Ref: DataMediaBucket6E8238AC
+      PolicyDocument:
+        Statement:
+          - Action: s3:*
+            Condition:
+              Bool:
+                aws:SecureTransport: "false"
+            Effect: Deny
+            Principal:
+              AWS: "*"
+            Resource:
+              - Fn::GetAtt:
+                  - DataMediaBucket6E8238AC
+                  - Arn
+              - Fn::Join:
+                  - ""
+                  - - Fn::GetAtt:
+                        - DataMediaBucket6E8238AC
+                        - Arn
+                    - /*
+          - Action: s3:GetObject
+            Condition:
+              StringEquals:
+                AWS:SourceArn:
+                  Fn::Join:
+                    - ""
+                    - - "arn:"
+                      - Ref: AWS::Partition
+                      - ":cloudfront::"
+                      - Ref: AWS::AccountId
+                      - :distribution/
+                      - Ref: Distribution830FAC52
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Resource:
+                - - Fn::GetAtt:
+                      - DataMediaBucket6E8238AC
+                      - Arn
+                  - /*
+        Version: "2012-10-17"
+    Metadata:
+      aws:cdk:path: kedar-foods-app-dev-frontend/DataMediaBucket/Policy/Resource
+  FrontendOACB94BB8F4:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: kedar-foods-app-dev-oac-frontend
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+    Metadata:
+      aws:cdk:path: kedar-foods-app-dev-frontend/FrontendOAC/Resource
+  DataMediaOAC4BDF6174:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: kedar-foods-app-dev-oac-data-media
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+    Metadata:
+      aws:cdk:path: kedar-foods-app-dev-frontend/DataMediaOAC/Resource
+  HtmlCachePolicy9A5E4D6F:
+    Type: AWS::CloudFront::CachePolicy
+    Properties:
+      CachePolicyConfig:
+        DefaultTTL: 60
+        MaxTTL: 300
+        MinTTL: 0
+        Name: kedar-foods-app-dev-cache-html
+        ParametersInCacheKeyAndForwardedToOrigin:
+          CookiesConfig:
+            CookieBehavior: none
+          EnableAcceptEncodingBrotli: true
+          EnableAcceptEncodingGzip: true
+          HeadersConfig:
+            HeaderBehavior: none
+          QueryStringsConfig:
+            QueryStringBehavior: none
+    Metadata:
+      aws:cdk:path: kedar-foods-app-dev-frontend/HtmlCachePolicy/Resource
+  DataCachePolicy6B8D1C88:
+    Type: AWS::CloudFront::CachePolicy
+    Properties:
+      CachePolicyConfig:
+        DefaultTTL: 60
+        MaxTTL: 300
+        MinTTL: 0
+        Name: kedar-foods-app-dev-cache-data
+        ParametersInCacheKeyAndForwardedToOrigin:
+          CookiesConfig:
+            CookieBehavior: none
+          EnableAcceptEncodingBrotli: true
+          EnableAcceptEncodingGzip: true
+          HeadersConfig:
+            HeaderBehavior: none
+          QueryStringsConfig:
+            QueryStringBehavior: none
+    Metadata:
+      aws:cdk:path: kedar-foods-app-dev-frontend/DataCachePolicy/Resource
+  ImmutableCachePolicy3D6B0A97:
+    Type: AWS::CloudFront::CachePolicy
+    Properties:
+      CachePolicyConfig:
+        DefaultTTL: 31536000
+        MaxTTL: 31536000
+        MinTTL: 31536000
+        Name: kedar-foods-app-dev-cache-immutable
+        ParametersInCacheKeyAndForwardedToOrigin:
+          CookiesConfig:
+            CookieBehavior: none
+          EnableAcceptEncodingBrotli: true
+          EnableAcceptEncodingGzip: true
+          HeadersConfig:
+            HeaderBehavior: none
+          QueryStringsConfig:
+            QueryStringBehavior: none
+    Metadata:
+      aws:cdk:path: kedar-foods-app-dev-frontend/ImmutableCachePolicy/Resource
+  ResponseHeadersPolicy13DBF9E0:
+    Type: AWS::CloudFront::ResponseHeadersPolicy
+    Properties:
+      ResponseHeadersPolicyConfig:
+        CustomHeadersConfig:
+          Items:
+            - Header: Permissions-Policy
+              Override: true
+              Value: camera=(), microphone=(), geolocation=()
+            - Header: Content-Security-Policy-Report-Only
+              Override: true
+              Value: default-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'
+        Name: kedar-foods-app-dev-response-headers
+        SecurityHeadersConfig:
+          ContentTypeOptions:
+            Override: true
+          FrameOptions:
+            FrameOption: DENY
+            Override: true
+          ReferrerPolicy:
+            Override: true
+            ReferrerPolicy: strict-origin-when-cross-origin
+          StrictTransportSecurity:
+            AccessControlMaxAgeSec: 31536000
+            IncludeSubdomains: false
+            Override: true
+            Preload: false
+    Metadata:
+      aws:cdk:path: kedar-foods-app-dev-frontend/ResponseHeadersPolicy/Resource
+  RoutingFunctionC57575D2:
+    Type: AWS::CloudFront::Function
+    Properties:
+      AutoPublish: true
+      FunctionCode: "function handler(event) {\r
+
+        \  var request = event.request;\r
+
+        \  var uri = request.uri;\r
+
+        \r
+
+        \  if (uri !== '/') {\r
+
+        \    uri = uri.replace(/\\/+$/, '');\r
+
+        \    if (uri === '') {\r
+
+        \      uri = '/';\r
+
+        \    }\r
+
+        \    request.uri = uri;\r
+
+        \  }\r
+
+        \r
+
+        \  if (\r
+
+        \    uri.indexOf('/_next/') === 0 ||\r
+
+        \    uri.indexOf('/data/') === 0 ||\r
+
+        \    uri.indexOf('/media/') === 0\r
+
+        \  ) {\r
+
+        \    return request;\r
+
+        \  }\r
+
+        \r
+
+        \  if (uri === '/') {\r
+
+        \    request.uri = '/index.html';\r
+
+        \    return request;\r
+
+        \  }\r
+
+        \r
+
+        \  var productMatch = uri.match(/^\\/products\\/([^/]+)$/);\r
+
+        \  if (productMatch && productMatch[1].indexOf('.') === -1) {\r
+
+        \    request.uri = '/products/_shell.html';\r
+
+        \    return request;\r
+
+        \  }\r
+
+        \r
+
+        \  var lastSegment = uri.substring(uri.lastIndexOf('/') + 1);\r
+
+        \  if (lastSegment.indexOf('.') !== -1) {\r
+
+        \    return request;\r
+
+        \  }\r
+
+        \r
+
+        \  request.uri = uri.replace(/\\/+$/, '') + '.html';\r
+
+        \  return request;\r
+
+        }\r\n"
+      FunctionConfig:
+        Comment: kedar-foods-app-dev-routing
+        Runtime: cloudfront-js-2.0
+      Name: kedar-foods-app-dev-routing
+    Metadata:
+      aws:cdk:path: kedar-foods-app-dev-frontend/RoutingFunction/Resource
+  Distribution830FAC52:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        CacheBehaviors:
+          - CachePolicyId:
+              Ref: DataCachePolicy6B8D1C88
+            Compress: true
+            PathPattern: /data/*
+            ResponseHeadersPolicyId:
+              Ref: ResponseHeadersPolicy13DBF9E0
+            TargetOriginId: kedarfoodsappdevfrontendDistributionOrigin2894C6224
+            ViewerProtocolPolicy: redirect-to-https
+          - CachePolicyId:
+              Ref: ImmutableCachePolicy3D6B0A97
+            Compress: true
+            PathPattern: /media/*
+            ResponseHeadersPolicyId:
+              Ref: ResponseHeadersPolicy13DBF9E0
+            TargetOriginId: kedarfoodsappdevfrontendDistributionOrigin2894C6224
+            ViewerProtocolPolicy: redirect-to-https
+          - CachePolicyId:
+              Ref: ImmutableCachePolicy3D6B0A97
+            Compress: true
+            PathPattern: /_next/*
+            ResponseHeadersPolicyId:
+              Ref: ResponseHeadersPolicy13DBF9E0
+            TargetOriginId: kedarfoodsappdevfrontendDistributionOrigin108722219
+            ViewerProtocolPolicy: redirect-to-https
+        CustomErrorResponses:
+          - ErrorCachingMinTTL: 10
+            ErrorCode: 403
+            ResponseCode: 404
+            ResponsePagePath: /404.html
+          - ErrorCachingMinTTL: 10
+            ErrorCode: 404
+            ResponseCode: 404
+            ResponsePagePath: /404.html
+        DefaultCacheBehavior:
+          CachePolicyId:
+            Ref: HtmlCachePolicy9A5E4D6F
+          Compress: true
+          FunctionAssociations:
+            - EventType: viewer-request
+              FunctionARN:
+                Fn::GetAtt:
+                  - RoutingFunctionC57575D2
+                  - FunctionARN
+          ResponseHeadersPolicyId:
+            Ref: ResponseHeadersPolicy13DBF9E0
+          TargetOriginId: kedarfoodsappdevfrontendDistributionOrigin108722219
+          ViewerProtocolPolicy: redirect-to-https
+        Enabled: true
+        HttpVersion: http2
+        IPV6Enabled: true
+        Origins:
+          - DomainName:
+              Fn::GetAtt:
+                - FrontendBucketEFE2E19C
+                - RegionalDomainName
+            Id: kedarfoodsappdevfrontendDistributionOrigin108722219
+            OriginAccessControlId:
+              Fn::GetAtt:
+                - FrontendOACB94BB8F4
+                - Id
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+          - DomainName:
+              Fn::GetAtt:
+                - DataMediaBucket6E8238AC
+                - RegionalDomainName
+            Id: kedarfoodsappdevfrontendDistributionOrigin2894C6224
+            OriginAccessControlId:
+              Fn::GetAtt:
+                - DataMediaOAC4BDF6174
+                - Id
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+        PriceClass: PriceClass_200
+      Tags:
+        - Key: Env
+          Value: dev
+        - Key: Project
+          Value: kedar-foods-app
+    Metadata:
+      aws:cdk:path: kedar-foods-app-dev-frontend/Distribution/Resource
+  CDKMetadata:
+    Type: AWS::CDK::Metadata
+    Properties:
+      Analytics: v2:deflate64:H4sIAAAAAAAA/21OSw6CQAw9C3sY+ZzAT4w7CR7ADGWUCnbItBNDCHc3iooLVu/bl6YqTWMVB/rBEVRN1GKphpNoaEL94PPAmRo2Hhoj4fZCHzZBbluEfrYnPYbQWl9dnCVRwyk7OrwirQEM89aSONu+ThZtDbWZV/9lYbizxOZgdGUcz6XlYO8JBC29Gj++QxaHpf8G/3oc30956byMYd5LbWmVqSRVSRzcGDFyngTvRhUTPgEqfGI5OAEAAA==
+    Metadata:
+      aws:cdk:path: kedar-foods-app-dev-frontend/CDKMetadata/Default
+Outputs:
+  FrontendBucketName:
+    Value:
+      Ref: FrontendBucketEFE2E19C
+  DataMediaBucketName:
+    Value:
+      Ref: DataMediaBucket6E8238AC
+  DistributionId:
+    Value:
+      Ref: Distribution830FAC52
+  SiteDomain:
+    Value:
+      Fn::GetAtt:
+        - Distribution830FAC52
+        - DomainName
+Parameters:
+  BootstrapVersion:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /cdk-bootstrap/hnb659fds/version
+    Description: Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]
+
+72 feature flags are not configured. Run 'cdk flags --unstable=flags' to learn more.
+Exit code: 0
+
+Finished: 2026-10-06T11:14:04.3481892+05:30
+Overall exit code: 0

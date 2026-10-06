@@ -12,6 +12,10 @@
 
 # testing
 /coverage
+/infra/.pytest_cache/
+/infra/.mypy_cache/
+/infra/.ruff_cache/
+/infra/**/__pycache__/
 
 # next.js
 /.next/
@@ -41,3 +45,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# AWS CDK
+/infra/.venv/
+/infra/cdk.out/
