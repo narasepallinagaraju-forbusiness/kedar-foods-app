@@ -4,12 +4,16 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Search, MessageCircle, Menu, X, Wheat } from 'lucide-react'
-import { buildGeneralWaLink } from '@/lib/data'
+import { getWhatsAppConfig } from '@/lib/api/site-config'
+import { useSiteConfig } from '@/lib/api/hooks'
+import { buildGeneralWhatsAppUrl } from '@/lib/api/whatsapp.mjs'
 
-export default function Header({ initialSearch = '', onSearch = null }) {
+export default function Header({ initialSearch = '', onSearch = null, configEnabled = true }) {
   const router = useRouter()
   const [query, setQuery] = useState(initialSearch)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const { data: siteConfig } = useSiteConfig(configEnabled)
+  const whatsapp = getWhatsAppConfig(siteConfig)
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -50,7 +54,7 @@ export default function Header({ initialSearch = '', onSearch = null }) {
             Catalogue
           </Link>
           <a
-            href={buildGeneralWaLink()}
+            href={buildGeneralWhatsAppUrl(whatsapp)}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"

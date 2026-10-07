@@ -91,6 +91,50 @@ try {
         }
     }
 
+    $backendStackName = "kedar-foods-app-$Env-backend"
+    $backendStackJson = Invoke-AwsCommand -Arguments @(
+        "cloudformation",
+        "describe-stacks",
+        "--stack-name",
+        $backendStackName,
+        "--region",
+        $region,
+        "--output",
+        "json"
+    )
+    $backendStack = ($backendStackJson | ConvertFrom-Json).Stacks |
+        Select-Object -First 1
+    $apiUrl = [string](
+        $backendStack.Outputs |
+            Where-Object { $_.OutputKey -eq "ApiUrl" } |
+            Select-Object -First 1
+    ).OutputValue
+    $apiUri = $null
+    if (
+        $null -eq $backendStack -or
+        [string]::IsNullOrWhiteSpace($apiUrl) -or
+        -not [Uri]::TryCreate($apiUrl, [UriKind]::Absolute, [ref]$apiUri)
+    ) {
+        throw "Backend stack '$backendStackName' has no valid ApiUrl output. Run 'npm run build:frontend' and retry."
+    }
+
+    $nextAssetDirectory = Join-Path $outputDirectory "_next"
+    $apiHostname = $apiUri.Host
+    $hostnameFound = $false
+    if (Test-Path -LiteralPath $nextAssetDirectory -PathType Container) {
+        $textAssets = Get-ChildItem -LiteralPath $nextAssetDirectory -File -Recurse |
+            Where-Object { $_.Extension -in @(".js", ".mjs", ".css", ".json", ".map") }
+        foreach ($asset in $textAssets) {
+            if (Select-String -LiteralPath $asset.FullName -Pattern $apiHostname -SimpleMatch -Quiet) {
+                $hostnameFound = $true
+                break
+            }
+        }
+    }
+    if (-not $hostnameFound) {
+        throw "API hostname '$apiHostname' is missing from out/_next. Run 'npm run build:frontend' before deploying."
+    }
+
     $identityJson = Invoke-AwsCommand -Arguments @(
         "sts",
         "get-caller-identity",

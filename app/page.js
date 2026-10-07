@@ -7,10 +7,11 @@ import Header from '@/components/kedar/Header'
 import Footer from '@/components/kedar/Footer'
 import OfferPromoBlock from '@/components/kedar/OfferPromoBlock'
 import OfferPopup from '@/components/kedar/OfferPopup'
-import { useProducts } from '@/lib/useProducts'
-import { useSiteOffer } from '@/lib/useSiteOffer'
-import { buildGeneralWaLink, buildWaLink, getQuantities, TOP_BRANDS } from '@/lib/data'
-import { getProductSlug } from '../scripts/product-links.js'
+import { useCatalogIndex, useSiteConfig } from '@/lib/api/hooks'
+import { getSiteCategories, getWhatsAppConfig } from '@/lib/api/site-config'
+import { getCatalogImageUrl } from '@/lib/api/catalog.mjs'
+import { buildGeneralWhatsAppUrl, buildProductWhatsAppUrl } from '@/lib/api/whatsapp.mjs'
+import { TOP_BRANDS } from '@/lib/data'
 
 const STYLES = [
   {
@@ -36,7 +37,7 @@ const STYLES = [
   },
 ]
 
-function HeroCarousel({ slides }) {
+function HeroCarousel({ slides, whatsapp }) {
   const [active, setActive] = useState(0)
   const count = slides.length
 
@@ -56,24 +57,27 @@ function HeroCarousel({ slides }) {
           key={p.id}
           className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${i === active ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={p.image} alt={p.name} className="h-full w-full object-cover" />
+          {getCatalogImageUrl(p.thumbnailKey) ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={getCatalogImageUrl(p.thumbnailKey)} alt={p.name} className="h-full w-full object-cover" />
+          ) : (
+            <div className="h-full w-full bg-gradient-to-br from-gray-700 to-gray-900" role="img" aria-label="Product image unavailable" />
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
 
           <div className="absolute inset-x-0 bottom-0 p-5 text-white sm:p-7">
             <div className="mb-2 flex flex-wrap items-center gap-2">
               <span className="rounded-full bg-amber-500 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white">{p.brand}</span>
-              <span className="rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-semibold backdrop-blur">{getQuantities(p)[0]}</span>
+              {p.quantities?.[0] && <span className="rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-semibold backdrop-blur">{p.quantities[0]}</span>}
               <span className="rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-semibold backdrop-blur">{p.category}</span>
             </div>
             <h3 className="text-2xl font-extrabold leading-tight sm:text-3xl">
-              <a href={`/products/${encodeURIComponent(getProductSlug(p))}`} className="hover:text-amber-300">
+              <a href={`/products/${encodeURIComponent(p.slug)}`} className="hover:text-amber-300">
                 {p.name}
               </a>
             </h3>
-            <p className="mt-1 max-w-md text-sm text-white/80">{p.description}</p>
             <a
-              href={buildWaLink(p)}
+              href={buildProductWhatsAppUrl(whatsapp, p)}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-4 inline-flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
@@ -120,9 +124,15 @@ function HeroCarousel({ slides }) {
 }
 
 export default function App() {
-  const { products } = useProducts()
-  const { offer, loaded: offerLoaded } = useSiteOffer()
-  const slides = products.filter((p) => p.isTrending).slice(0, 5)
+  const catalogQuery = useCatalogIndex()
+  const siteConfigQuery = useSiteConfig()
+  const catalogItems = catalogQuery.data?.items ?? []
+  const siteConfig = siteConfigQuery.data
+  const offerLoaded = !siteConfigQuery.isLoading && !siteConfigQuery.isError
+  const offer = siteConfig?.offerBanner
+  const whatsapp = getWhatsAppConfig(siteConfig)
+  const categories = getSiteCategories(siteConfig)
+  const slides = catalogItems.filter((product) => product.isTrending).slice(0, 5)
   const brandLoop = [...TOP_BRANDS, ...TOP_BRANDS]
 
   return (
@@ -131,6 +141,14 @@ export default function App() {
 
       {/* Conditional sitewide promo (collapses fully when inactive) */}
       <OfferPromoBlock offer={offer} loaded={offerLoaded} />
+      {siteConfigQuery.isError && (
+        <div className="mx-auto flex max-w-7xl items-center justify-center gap-3 px-4 py-3 text-center text-sm text-gray-600 sm:px-6" role="status">
+          Site settings are unavailable; WhatsApp enquiries use the saved contact details.
+          <button onClick={() => siteConfigQuery.refetch()} className="font-semibold text-amber-700 hover:underline">
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* Hero */}
       <section className="relative overflow-hidden">
@@ -149,7 +167,7 @@ export default function App() {
               <Link href="/catalogue" className="inline-flex items-center gap-2 rounded-full bg-amber-500 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-600">
                 Browse Catalogue <ArrowRight className="h-4 w-4" />
               </Link>
-              <a href={buildGeneralWaLink()} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-6 py-3 text-sm font-semibold text-gray-800 transition hover:border-emerald-300 hover:text-emerald-700">
+              <a href={buildGeneralWhatsAppUrl(whatsapp)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-6 py-3 text-sm font-semibold text-gray-800 transition hover:border-emerald-300 hover:text-emerald-700">
                 <MessageCircle className="h-4 w-4" /> Enquire on WhatsApp
               </a>
             </div>
@@ -161,7 +179,39 @@ export default function App() {
           </div>
 
           {/* Auto-playing product carousel */}
-          <HeroCarousel slides={slides} />
+          {catalogQuery.isLoading ? (
+            <div className="flex h-[380px] items-center justify-center rounded-3xl border border-gray-100 bg-gray-100 text-gray-500 shadow-xl sm:h-[460px]" aria-live="polite">
+              Loading trending products...
+            </div>
+          ) : catalogQuery.isError ? (
+            <div className="flex h-[380px] flex-col items-center justify-center gap-3 rounded-3xl border border-gray-100 bg-gray-100 px-6 text-center text-gray-600 shadow-xl sm:h-[460px]" role="alert">
+              <p>Unable to load products right now.</p>
+              <button onClick={() => catalogQuery.refetch()} className="rounded-full bg-amber-500 px-5 py-2 text-sm font-semibold text-white hover:bg-amber-600">
+                Retry
+              </button>
+            </div>
+          ) : (
+            <HeroCarousel slides={slides} whatsapp={whatsapp} />
+          )}
+        </div>
+      </section>
+
+      {/* Categories from the public site configuration */}
+      <section className="mx-auto mt-16 max-w-7xl px-4 sm:px-6">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900">Shop by Category</h2>
+          <p className="mt-2 text-gray-500">Browse our wholesale ingredient ranges.</p>
+        </div>
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          {categories.map((category) => (
+            <Link
+              key={category.id}
+              href={`/catalogue?category=${encodeURIComponent(category.name)}`}
+              className="rounded-full border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 transition hover:border-amber-400 hover:text-amber-700"
+            >
+              {category.name}
+            </Link>
+          ))}
         </div>
       </section>
 

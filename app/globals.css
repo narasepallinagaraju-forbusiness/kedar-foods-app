@@ -3991,6 +3991,10 @@ code {
   background-color: transparent;
 }
 
+.product-card-image {
+  aspect-ratio: 4 / 3;
+}
+
 @media (min-width: 1024px) {
   .catalogue-product-grid {
     grid-template-columns: repeat(5, minmax(0, 1fr));

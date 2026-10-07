@@ -1,14 +1,13 @@
 import { createReadStream } from 'node:fs'
-import { readFile, stat } from 'node:fs/promises'
+import { stat } from 'node:fs/promises'
 import { createServer } from 'node:http'
 import { extname, resolve, sep } from 'node:path'
+import { Readable } from 'node:stream'
 import { fileURLToPath } from 'node:url'
 
-// TEMPORARY Phase 0 server; spike-data/products.json is a local mock fixture, not production storage.
 const projectRoot = resolve(fileURLToPath(new URL('..', import.meta.url)))
 const outputRoot = resolve(projectRoot, 'out')
-const productsFile = resolve(projectRoot, 'spike-data', 'products.json')
-const port = Number(process.env.PORT || 4173)
+const port = Number(process.env.PORT || 3000)
 const excludedPrefixes = ['/_next/', '/data/', '/media/']
 
 const contentTypes = {
@@ -37,12 +36,50 @@ function sendText(response, status, text) {
   response.end(text)
 }
 
-function sendJson(response, status, value) {
-  response.writeHead(status, {
-    'Content-Type': 'application/json; charset=utf-8',
-    'Cache-Control': 'no-store',
-  })
-  response.end(JSON.stringify(value))
+function getCloudFrontOrigin() {
+  const configuredOrigin = process.env.CLOUDFRONT_SITE_ORIGIN?.trim()
+  if (!configuredOrigin) {
+    throw new Error('Set CLOUDFRONT_SITE_ORIGIN to the deployed CloudFront site origin.')
+  }
+
+  let origin
+  try {
+    origin = new URL(configuredOrigin)
+  } catch {
+    throw new Error('CLOUDFRONT_SITE_ORIGIN must be a valid HTTPS origin.')
+  }
+
+  if (
+    origin.protocol !== 'https:' ||
+    origin.username ||
+    origin.password ||
+    origin.pathname !== '/' ||
+    origin.search ||
+    origin.hash
+  ) {
+    throw new Error('CLOUDFRONT_SITE_ORIGIN must be a valid HTTPS origin.')
+  }
+
+  return origin.origin
+}
+
+async function proxyCloudFrontAsset(response, pathname, search, method) {
+  const origin = getCloudFrontOrigin()
+  const upstream = await fetch(new URL(`${pathname}${search}`, `${origin}/`), { method })
+  const headers = {}
+
+  for (const header of ['content-type', 'cache-control', 'etag', 'last-modified', 'expires']) {
+    const value = upstream.headers.get(header)
+    if (value) headers[header] = value
+  }
+
+  response.writeHead(upstream.status, headers)
+  if (method === 'HEAD' || !upstream.body) {
+    response.end()
+    return
+  }
+
+  Readable.fromWeb(upstream.body).pipe(response)
 }
 
 function shouldRewriteToProductShell(pathname) {
@@ -132,33 +169,16 @@ const server = createServer(async (request, response) => {
     return
   }
 
-  const apiMatch = pathname.match(/^\/mock-api\/products\/([^/]+)$/)
-  if (apiMatch) {
-    if (method !== 'GET') {
-      sendText(response, 405, 'Method not allowed')
-      return
-    }
-
+  if (/^\/(?:data|media)(?:\/|$)/.test(pathname)) {
     try {
-      const slug = decodeURIComponent(apiMatch[1])
-      const data = JSON.parse(await readFile(productsFile, 'utf8'))
-      if (!Array.isArray(data.products)) {
-        throw new Error('spike-data/products.json must contain a products array')
-      }
-
-      const product = data.products.find((item) => item.slug === slug)
-      if (!product) {
-        sendJson(response, 404, { error: 'Product not found' })
-        return
-      }
-
-      sendJson(response, 200, product)
-      return
+      const url = new URL(request.url, 'http://localhost')
+      await proxyCloudFrontAsset(response, pathname, url.search, method)
     } catch (error) {
-      console.error('Mock product API failed:', error)
-      sendJson(response, 500, { error: 'Mock product API failed' })
-      return
+      console.error('CloudFront asset proxy failed:', error)
+      if (!response.headersSent) sendText(response, 502, 'CloudFront asset proxy failed')
+      else response.destroy(error)
     }
+    return
   }
 
   const staticPath = shouldRewriteToProductShell(pathname)
