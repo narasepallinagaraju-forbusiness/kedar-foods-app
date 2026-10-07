@@ -9,9 +9,9 @@ import pytest
 from aws_cdk import App, Environment, Stack
 from aws_cdk.assertions import Template
 from aws_cdk.cloud_assembly_schema import AwsCloudFormationStackProperties
+from frontend_stack import FrontendStack
 
 from app import create_app
-from frontend_stack import FrontendStack
 
 ROOT = Path(__file__).resolve().parents[2]
 ROUTING_FUNCTION = ROOT / "scripts" / "cloudfront-routing-function.js"

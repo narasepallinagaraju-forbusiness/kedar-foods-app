@@ -330,8 +330,9 @@ class FrontendStack(Stack):
             certificate=certificate,
             minimum_protocol_version=cloudfront.SecurityPolicyProtocol.TLS_V1_2_2021,
         )
+        self.distribution_domain_name = distribution.distribution_domain_name
 
         CfnOutput(self, "FrontendBucketName", value=frontend_bucket.bucket_name)
         CfnOutput(self, "DataMediaBucketName", value=data_bucket.bucket_name)
         CfnOutput(self, "DistributionId", value=distribution.distribution_id)
-        CfnOutput(self, "SiteDomain", value=distribution.distribution_domain_name)
+        CfnOutput(self, "SiteDomain", value=self.distribution_domain_name)
