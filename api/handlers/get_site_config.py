@@ -97,7 +97,7 @@ def handler(
     return json_response(
         200,
         _public_config(item),
-        cache_control="public, max-age=30",
+        cache_control="public, max-age=0, must-revalidate",
     )
 
 

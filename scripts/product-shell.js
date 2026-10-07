@@ -3,11 +3,9 @@
 import { useEffect, useState, useSyncExternalStore } from 'react'
 import Header from '../components/kedar/Header.js'
 import Footer from '../components/kedar/Footer.js'
-import { useCatalogIndex, useProduct, useSiteConfig } from '../app/lib/api/hooks.js'
+import { useCatalogIndex, useProduct } from '../app/lib/api/hooks.js'
 import { getRelatedProducts } from '../app/lib/api/catalog.mjs'
 import { parseProductSlug } from '../app/lib/api/slug.mjs'
-import { getWhatsAppConfig } from '../app/lib/api/site-config.js'
-import { buildProductWhatsAppUrl } from '../app/lib/api/whatsapp.mjs'
 
 const DEFAULT_TITLE = 'Kedar Foods | Wholesale Raw Materials for Bakeries, Cafes & Restaurants'
 
@@ -32,8 +30,6 @@ export default function ProductShell() {
   const productQuery = useProduct(slug)
   const product = productQuery.data
   const catalogQuery = useCatalogIndex(Boolean(product))
-  const siteConfigQuery = useSiteConfig(Boolean(slug))
-  const whatsapp = getWhatsAppConfig(siteConfigQuery.data)
   const quantities = Array.isArray(product?.quantities) ? product.quantities : []
   const mainImageUrl = product?.image?.main ? `/${product.image.main}` : null
   const selectedPack = packSelection && packSelection.productId === product?.id
@@ -134,22 +130,6 @@ export default function ProductShell() {
                   </section>
                 )}
 
-                <a
-                  href={buildProductWhatsAppUrl(whatsapp, product, selectedPack)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-8 inline-flex items-center justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-emerald-700"
-                >
-                  Enquire on WhatsApp
-                </a>
-                {siteConfigQuery.isError && (
-                  <p className="mt-3 text-sm text-gray-500" role="status">
-                    Using saved WhatsApp details.{' '}
-                    <button onClick={() => siteConfigQuery.refetch()} className="font-semibold text-amber-700 hover:underline">
-                      Retry site settings
-                    </button>
-                  </p>
-                )}
               </div>
             </article>
 

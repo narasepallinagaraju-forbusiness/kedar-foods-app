@@ -47,6 +47,7 @@ def create_app(context: Mapping[str, str] | None = None) -> App:
         f"kedar-foods-app-{env_name}-backend",
         env_name=env_name,
         cloudfront_domain_name=frontend_stack.distribution_domain_name,
+        data_bucket_name=frontend_stack.data_bucket_name,
         custom_domain_name=domain_name,
         env=environment,
         termination_protection=env_name == "prod",

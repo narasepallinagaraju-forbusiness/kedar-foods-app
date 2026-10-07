@@ -331,6 +331,7 @@ class FrontendStack(Stack):
             minimum_protocol_version=cloudfront.SecurityPolicyProtocol.TLS_V1_2_2021,
         )
         self.distribution_domain_name = distribution.distribution_domain_name
+        self.data_bucket_name = data_bucket.bucket_name
 
         CfnOutput(self, "FrontendBucketName", value=frontend_bucket.bucket_name)
         CfnOutput(self, "DataMediaBucketName", value=data_bucket.bucket_name)

@@ -188,7 +188,7 @@ def test_product_handler_returns_only_public_allowlist() -> None:
     assert response["headers"] == {
         "Content-Type": "application/json",
         "X-Content-Type-Options": "nosniff",
-        "Cache-Control": "public, max-age=30",
+        "Cache-Control": "public, max-age=0, must-revalidate",
     }
     body = _body(response)
     assert body == {
@@ -342,7 +342,7 @@ def test_site_config_returns_only_allowlisted_shape_and_converts_decimal() -> No
     assert response["headers"] == {
         "Content-Type": "application/json",
         "X-Content-Type-Options": "nosniff",
-        "Cache-Control": "public, max-age=30",
+        "Cache-Control": "public, max-age=0, must-revalidate",
     }
     assert _body(response) == {
         "offerBanner": {

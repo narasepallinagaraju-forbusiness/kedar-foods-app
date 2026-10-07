@@ -3,22 +3,46 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Lock, User, Wheat, AlertCircle } from 'lucide-react'
+import { Lock, User, Wheat, AlertCircle, KeyRound } from 'lucide-react'
+import { adminFetch } from '@/lib/admin-api/client'
+import { clearAdminKey, setAdminKey } from '@/lib/admin-api/admin-key.mjs'
 
 export default function AdminLoginPage() {
   const router = useRouter()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [adminKey, setAdminKeyInput] = useState('')
   const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault()
+    setError('')
     // Hardcoded internal credentials (MVP only — no real auth).
-    if (username === 'admin' && password === 'kedar123') {
+    if (username !== 'admin' || password !== 'kedar123') {
+      setError('Invalid username or password.')
+      return
+    }
+    const key = adminKey.trim()
+    if (!key) {
+      setError('Enter the admin key.')
+      return
+    }
+    if (!setAdminKey(key)) {
+      setError('This browser blocked storing the key for this tab.')
+      return
+    }
+    setBusy(true)
+    try {
+      // Cheap read to confirm the key before opening the dashboard.
+      await adminFetch({ path: '/admin/site-config' })
       try { sessionStorage.setItem('kedar_admin', '1') } catch {}
       router.push('/admin/dashboard')
-    } else {
-      setError('Invalid username or password.')
+    } catch (err) {
+      clearAdminKey()
+      setError(err?.message || 'Could not verify the admin key.')
+    } finally {
+      setBusy(false)
     }
   }
 
@@ -68,8 +92,23 @@ export default function AdminLoginPage() {
                 />
               </div>
             </div>
-            <button type="submit" className="w-full rounded-lg bg-amber-500 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-600">
-              Sign In
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-gray-600">Admin key</label>
+              <div className="relative">
+                <KeyRound className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="password"
+                  autoComplete="off"
+                  value={adminKey}
+                  onChange={(e) => setAdminKeyInput(e.target.value)}
+                  placeholder="Paste your admin key"
+                  className="w-full rounded-lg border border-gray-200 py-2.5 pl-10 pr-3 text-sm outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                />
+              </div>
+              <p className="mt-1 text-[11px] text-gray-400">Needed to save changes. Kept only until you close this tab.</p>
+            </div>
+            <button type="submit" disabled={busy} className="w-full rounded-lg bg-amber-500 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-60">
+              {busy ? 'Checking…' : 'Sign In'}
             </button>
           </form>
 

@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from aws_cdk import (
+    ArnFormat,
     CfnOutput,
     Duration,
     RemovalPolicy,
@@ -34,9 +35,13 @@ from constructs import Construct
 if TYPE_CHECKING:
     from aws_cdk import Environment
 
+INDEX_KEY = "data/catalog-index.json"
+ADMIN_THROTTLE_RATE = 5
+ADMIN_THROTTLE_BURST = 10
+
 
 class BackendStack(Stack):
-    """Read-only product and site configuration API stack."""
+    """Product and site configuration API stack, with key-protected admin routes."""
 
     def __init__(
         self,
@@ -45,6 +50,7 @@ class BackendStack(Stack):
         *,
         env_name: str,
         cloudfront_domain_name: str,
+        data_bucket_name: str,
         custom_domain_name: str | None = None,
         env: Environment | None = None,
         termination_protection: bool = False,
@@ -137,6 +143,79 @@ class BackendStack(Stack):
             )
         )
 
+        admin_key_parameter = f"/kedar-foods-app/{env_name}/admin-key"
+        admin_key_arn = self.format_arn(
+            service="ssm",
+            resource="parameter",
+            resource_name=admin_key_parameter.lstrip("/"),
+            arn_format=ArnFormat.SLASH_RESOURCE_NAME,
+        )
+        index_object_arn = f"arn:{self.partition}:s3:::{data_bucket_name}/{INDEX_KEY}"
+        admin_products_function = self._create_read_function(
+            construct_id="AdminProductsFunction",
+            function_name=f"{resource_prefix}-admin-products",
+            handler="handlers.admin_products.handler",
+            code=lambda_code,
+            environment={
+                "PRODUCTS_TABLE_NAME": products_table.table_name,
+                "SITE_CONFIG_TABLE_NAME": site_config_table.table_name,
+                "DATA_BUCKET_NAME": data_bucket_name,
+                "ADMIN_KEY_PARAMETER": admin_key_parameter,
+            },
+        )
+        admin_site_config_function = self._create_read_function(
+            construct_id="AdminSiteConfigFunction",
+            function_name=f"{resource_prefix}-admin-site-config",
+            handler="handlers.admin_site_config.handler",
+            code=lambda_code,
+            environment={
+                "SITE_CONFIG_TABLE_NAME": site_config_table.table_name,
+                "ADMIN_KEY_PARAMETER": admin_key_parameter,
+            },
+        )
+        admin_products_function.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=[
+                    "dynamodb:GetItem",
+                    "dynamodb:PutItem",
+                    "dynamodb:UpdateItem",
+                    "dynamodb:Scan",
+                ],
+                resources=[products_table.table_arn],
+            )
+        )
+        admin_products_function.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["dynamodb:Query"],
+                resources=[products_index_arn],
+            )
+        )
+        admin_products_function.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["dynamodb:GetItem"],
+                resources=[site_config_table.table_arn],
+            )
+        )
+        admin_products_function.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["s3:PutObject"],
+                resources=[index_object_arn],
+            )
+        )
+        admin_site_config_function.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["dynamodb:GetItem", "dynamodb:UpdateItem"],
+                resources=[site_config_table.table_arn],
+            )
+        )
+        for admin_function in (admin_products_function, admin_site_config_function):
+            admin_function.add_to_role_policy(
+                iam.PolicyStatement(
+                    actions=["ssm:GetParameter"],
+                    resources=[admin_key_arn],
+                )
+            )
+
         api_origins = [
             f"https://{cloudfront_domain_name}",
             "http://localhost:3000",
@@ -153,9 +232,11 @@ class BackendStack(Stack):
                 allow_origins=api_origins,
                 allow_methods=[
                     apigatewayv2.CorsHttpMethod.GET,
+                    apigatewayv2.CorsHttpMethod.POST,
+                    apigatewayv2.CorsHttpMethod.PUT,
                     apigatewayv2.CorsHttpMethod.OPTIONS,
                 ],
-                allow_headers=["Content-Type"],
+                allow_headers=["Content-Type", "X-Admin-Key"],
                 allow_credentials=False,
                 max_age=Duration.seconds(3600),
             ),
@@ -176,7 +257,51 @@ class BackendStack(Stack):
                 site_config_function,
             ),
         )
-        apigatewayv2.HttpStage(
+        admin_products_integration = apigatewayv2_integrations.HttpLambdaIntegration(
+            "AdminProductsIntegration",
+            admin_products_function,
+        )
+        admin_site_config_integration = apigatewayv2_integrations.HttpLambdaIntegration(
+            "AdminSiteConfigIntegration",
+            admin_site_config_function,
+        )
+        method_enum = apigatewayv2.HttpMethod
+        admin_routes = [
+            ("/admin/products", method_enum.GET, admin_products_integration),
+            ("/admin/products", method_enum.POST, admin_products_integration),
+            ("/admin/products/{id}", method_enum.GET, admin_products_integration),
+            ("/admin/products/{id}", method_enum.PUT, admin_products_integration),
+            (
+                "/admin/products/{id}/archive",
+                method_enum.POST,
+                admin_products_integration,
+            ),
+            (
+                "/admin/products/{id}/restore",
+                method_enum.POST,
+                admin_products_integration,
+            ),
+            (
+                "/admin/catalog-index/rebuild",
+                method_enum.POST,
+                admin_products_integration,
+            ),
+            ("/admin/site-config", method_enum.GET, admin_site_config_integration),
+            (
+                "/admin/site-config/offer",
+                method_enum.PUT,
+                admin_site_config_integration,
+            ),
+        ]
+        admin_route_resources = []
+        for path, method, integration in admin_routes:
+            admin_route_resources.extend(
+                http_api.add_routes(
+                    path=path, methods=[method], integration=integration
+                )
+            )
+
+        stage = apigatewayv2.HttpStage(
             self,
             "DefaultStage",
             http_api=http_api,
@@ -186,6 +311,21 @@ class BackendStack(Stack):
                 rate_limit=20,
                 burst_limit=40,
             ),
+        )
+        cfn_stage = stage.node.default_child
+        assert isinstance(cfn_stage, apigatewayv2.CfnStage)
+        # Route settings can only be applied once the routes exist.
+        for route in admin_route_resources:
+            cfn_stage.node.add_dependency(route)
+        cfn_stage.add_property_override(
+            "RouteSettings",
+            {
+                f"{method.value} {path}": {
+                    "ThrottlingRateLimit": ADMIN_THROTTLE_RATE,
+                    "ThrottlingBurstLimit": ADMIN_THROTTLE_BURST,
+                }
+                for path, method, _integration in admin_routes
+            },
         )
 
         CfnOutput(self, "ApiUrl", value=http_api.api_endpoint)
