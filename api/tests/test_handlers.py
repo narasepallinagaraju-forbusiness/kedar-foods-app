@@ -327,8 +327,11 @@ def test_site_config_returns_only_allowlisted_shape_and_converts_decimal() -> No
             ],
             "whatsapp": {
                 "number": "+911234567890",
-                "messageTemplate": "Hello",
+                "display": "+91 12345 67890",
+                "messageTemplate": "Hi {name}{pack} ({sku})",
+                "generalMessage": "Hello",
                 "secret": "private",
+                "extraRawField": "must-not-leak",
             },
             "privateField": "private",
         }
@@ -358,8 +361,16 @@ def test_site_config_returns_only_allowlisted_shape_and_converts_decimal() -> No
         ],
         "whatsapp": {
             "number": "+911234567890",
-            "messageTemplate": "Hello",
+            "display": "+91 12345 67890",
+            "messageTemplate": "Hi {name}{pack} ({sku})",
+            "generalMessage": "Hello",
         },
+    }
+    assert set(_body(response)["whatsapp"]) == {
+        "number",
+        "display",
+        "messageTemplate",
+        "generalMessage",
     }
     assert table.get_item_arguments == {"Key": {"configKey": "site"}}
 
@@ -384,7 +395,13 @@ def test_site_config_omits_missing_optional_fields_and_filters_invalid_types() -
                     {"id": "cat_2", "sortOrder": Decimal("1.5")},
                     "not-a-category",
                 ],
-                "whatsapp": {"number": 123},
+                "whatsapp": {
+                    "number": 123,
+                    "display": "Display",
+                    "messageTemplate": "Template",
+                    "generalMessage": "General",
+                    "secret": "private",
+                },
                 "unexpected": "private",
             }
         ),
@@ -394,4 +411,9 @@ def test_site_config_omits_missing_optional_fields_and_filters_invalid_types() -
     assert _body(response) == {
         "offerBanner": {"link": "/"},
         "categories": [{"id": "cat_2", "sortOrder": 1.5}],
+        "whatsapp": {
+            "display": "Display",
+            "messageTemplate": "Template",
+            "generalMessage": "General",
+        },
     }

@@ -16,6 +16,12 @@
 /infra/.mypy_cache/
 /infra/.ruff_cache/
 /infra/**/__pycache__/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+review-bundle.txt
 
 # next.js
 /.next/

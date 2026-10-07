@@ -66,7 +66,10 @@ def _public_config(item: Mapping[str, Any]) -> dict[str, Any]:
 
     raw_whatsapp = item.get("whatsapp")
     if isinstance(raw_whatsapp, Mapping):
-        whatsapp = _copy_strings(raw_whatsapp, ("number", "messageTemplate"))
+        whatsapp = _copy_strings(
+            raw_whatsapp,
+            ("number", "display", "messageTemplate", "generalMessage"),
+        )
         if whatsapp:
             public_config["whatsapp"] = whatsapp
 

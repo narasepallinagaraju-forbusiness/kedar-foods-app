@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test:routing": "node scripts/test-routing-function.mjs",
     "test:infra": "pytest infra/tests",
-    "deploy:frontend": "powershell -ExecutionPolicy Bypass -File scripts/deploy-frontend.ps1 -Env prod"
+    "deploy:frontend": "powershell -ExecutionPolicy Bypass -File scripts/deploy-frontend.ps1 -Env prod",
+    "check:python": "powershell -ExecutionPolicy Bypass -File scripts/check.ps1"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.104.1",

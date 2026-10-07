@@ -6,6 +6,7 @@ import os
 from collections.abc import Mapping
 
 from aws_cdk import App, Environment, Tags
+
 from backend_stack import BackendStack
 from frontend_stack import FrontendStack
 

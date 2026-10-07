@@ -103,7 +103,9 @@ tests and `__pycache__`; no dependency bundling is needed.
     ],
     "whatsapp": {
       "number": "value",
-      "messageTemplate": "value"
+      "display": "value",
+      "messageTemplate": "value",
+      "generalMessage": "value"
     }
   }
   ```
