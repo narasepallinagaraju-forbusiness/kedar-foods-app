@@ -37,7 +37,7 @@ const STYLES = [
   },
 ]
 
-function HeroCarousel({ slides, whatsapp }) {
+function HeroCarousel({ slides }) {
   const [active, setActive] = useState(0)
   const count = slides.length
 
@@ -75,15 +75,7 @@ function HeroCarousel({ slides, whatsapp }) {
               <a href={`/products/${encodeURIComponent(p.slug)}`} className="hover:text-amber-300">
                 {p.name}
               </a>
-            </h3>
-            <a
-              href={buildProductWhatsAppUrl(whatsapp, p)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-4 inline-flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
-            >
-              <MessageCircle className="h-4 w-4" /> Enquire on WhatsApp
-            </a>
+            </h3>           
           </div>
         </div>
       ))}
@@ -133,6 +125,9 @@ export default function App() {
   const whatsapp = getWhatsAppConfig(siteConfig)
   const categories = getSiteCategories(siteConfig)
   const slides = catalogItems.filter((product) => product.isTrending).slice(0, 5)
+  const brandCount = new Set(
+    catalogItems.map((product) => String(product.brand ?? '').trim().toLowerCase()).filter(Boolean),
+  ).size
   const brandLoop = [...TOP_BRANDS, ...TOP_BRANDS]
 
   return (
@@ -191,10 +186,31 @@ export default function App() {
               </button>
             </div>
           ) : (
-            <HeroCarousel slides={slides} whatsapp={whatsapp} />
+            <HeroCarousel slides={slides} />
           )}
         </div>
       </section>
+
+      {/* Quick facts: counts come from the live catalogue */}
+      {catalogQuery.isSuccess && catalogItems.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 sm:px-6" aria-label="Kedar Foods at a glance">
+          <div
+            className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-8 text-center sm:py-10"
+            style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8 }}
+          >
+            {[
+              { value: brandCount, label: 'Brands' },
+              { value: catalogItems.length, label: 'Products' },
+              { value: '1000+', label: 'Shops Served' },
+            ].map((stat) => (
+              <div key={stat.label}>
+                <div className="text-3xl font-extrabold text-amber-600 sm:text-4xl">{stat.value}</div>
+                <div className="stat-label mt-2 text-sm font-bold sm:text-base">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Categories from the public site configuration */}
       <section className="mx-auto mt-16 max-w-7xl px-4 sm:px-6">
@@ -247,7 +263,10 @@ export default function App() {
       <section className="mt-16 border-y border-gray-100 bg-gray-50 py-10">
         <h2 className="mb-6 text-center text-xl font-bold text-gray-900">Top Brands We Supply</h2>
         <div className="group relative overflow-hidden">
-          <div className="marquee-track flex w-max items-center gap-4 px-4 animate-marquee">
+          <div
+            className="marquee-track flex w-max items-center gap-4 px-4 animate-marquee"
+            style={{ animationDuration: `${(brandLoop.length / 2) * 3.5}s` }}
+          >
             {brandLoop.map((brand, i) => (
               <span
                 key={`${brand}-${i}`}

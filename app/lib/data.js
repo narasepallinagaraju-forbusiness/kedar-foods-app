@@ -18,7 +18,8 @@ export const CATEGORIES = [
 ];
 
 // Brands featured in the "Top Brands We Supply" banner.
-export const TOP_BRANDS = ["Amul", "Milk Mist", "Callebaut", "Puratos", "Del Monte", "Tropilite"];
+export const TOP_BRANDS = ["IDL","IFF","Classic","Royal","Mass","GM ","Pillsburry","Taj","Tower","Weakfield","3F","Bunge","Malas","Morde","Beyond","Spongel","Tower ","Ricca Gel (Bunge)","Sarwar","M B","Cargil","Gangamani","Dara","Morton","Golden Crown ","Dukes","Malas ","Manama","Food Rite","Foodcoast","Cremica","Hershyes","Africana","Murkund ","Vanhouten ","Marvel","Standarad Laboraties","Alpha","MilkPot","Starwhip ","Mavees","Tropilite","Zone","TasteCraft","Dalda","Vanhouten","Crust N Crumb","Micks","Nandi","Sangam","K N B","G R B","Durga","Nutralite","Pristin","Organic","Dabur","Disano","Apis","Egle","kwality","Tulasi","Kamadenu","Blue Star","Milkwala","Nestle","Murali ","Bharath","Krishna ","Amul Spary","Amulya ","Aromatic","Cec","Rich's","Raj","Vizyon","Master","Diamond","Cat","Angel","Prime"
+];
 
 export const PRODUCTS = [
   {

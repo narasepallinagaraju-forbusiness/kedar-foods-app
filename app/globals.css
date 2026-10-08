@@ -4114,3 +4114,7 @@ html.dark-theme input::placeholder,
 html.dark-theme textarea::placeholder {
   color: #9ca3af;
 }
+
+.stat-label {
+  color: #080b13 !important; /* dark amber-brown, readable on the cream box */
+}

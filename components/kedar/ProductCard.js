@@ -30,9 +30,19 @@ export default function ProductCard({ product }) {
         <p className="mt-2 text-xs text-gray-500">SKU: {product.sku}</p>
 
         {quantities.length > 0 && (
-          <p className="mt-3 text-xs text-gray-600">
-            <span className="font-semibold">Pack sizes:</span> {quantities.join(', ')}
-          </p>
+          <div className="mt-3">
+            <p className="text-xs font-semibold text-gray-600">Pack sizes:</p>
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {quantities.map((qty, index) => (
+                <span
+                  key={`${qty}-${index}`}
+                  className="rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-semibold text-gray-700"
+                >
+                  {qty}
+                </span>
+              ))}
+            </div>
+          </div>
         )}
       </div>
     </article>

@@ -33,7 +33,7 @@ export default function Header({ initialSearch = '', onSearch = null, configEnab
             <Wheat className="h-5 w-5" />
           </span>
           <span className="flex flex-col leading-none">
-            <span className="text-lg font-extrabold tracking-tight text-gray-900">Kedar Foods</span>
+            <span className="text-lg font-extrabold tracking-tight text-gray-900">Kedhar Foods</span>
             <span className="text-[10px] font-medium uppercase tracking-widest text-amber-600">Wholesale Supply</span>
           </span>
         </Link>
