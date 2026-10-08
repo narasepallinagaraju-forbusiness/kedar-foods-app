@@ -6,11 +6,13 @@ import hashlib
 import re
 import unicodedata
 from collections.abc import Callable, Collection, Mapping
+from datetime import date
 from typing import Any
 
 BUSINESS_TYPES = ("Bakery", "Cafe", "Restaurant")
 CREATE_STATUSES = frozenset({"PUBLISHED", "ARCHIVED"})
 DEFAULT_CREATE_STATUS = "ARCHIVED"
+DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 SLUG_PATTERN = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 SKU_PATTERN = re.compile(r"^[A-Z0-9][A-Z0-9-]{0,28}[A-Z0-9]$")
 SLUG_SEPARATORS = re.compile(r"[^a-z0-9]+")
@@ -23,7 +25,7 @@ _OPTIONAL_FIELDS = ("description", "isTrending", "sortRank")
 _EDITABLE_FIELDS = (*_REQUIRED_FIELDS, *_OPTIONAL_FIELDS)
 _CREATE_KEYS = frozenset({*_EDITABLE_FIELDS, "sku", "status"})
 _UPDATE_KEYS = frozenset({*_EDITABLE_FIELDS, "version"})
-_OFFER_KEYS = frozenset({"enabled", "text", "link"})
+_OFFER_KEYS = frozenset({"enabled", "text", "link", "startDate", "endDate"})
 
 
 class ProductValidationError(Exception):
@@ -318,6 +320,38 @@ def validate_offer(body: object) -> dict[str, Any]:
         else:
             link = link_value
 
+    offer: dict[str, Any] = {"enabled": enabled, "text": text, "link": link}
+    dates: dict[str, str] = {}
+    for field in ("startDate", "endDate"):
+        raw = body.get(field, "")
+        if raw is None or raw == "":
+            continue
+        parsed = _parse_date(raw)
+        if parsed is None:
+            errors.append(
+                {"field": field, "message": "must be a real date as YYYY-MM-DD"}
+            )
+        else:
+            dates[field] = parsed.isoformat()
+    if (
+        "startDate" in dates
+        and "endDate" in dates
+        and dates["endDate"] < dates["startDate"]
+    ):
+        errors.append(
+            {"field": "endDate", "message": "must not be before the start date"}
+        )
+
     if errors:
         raise ProductValidationError(errors)
-    return {"enabled": enabled, "text": text, "link": link}
+    offer.update(dates)
+    return offer
+
+
+def _parse_date(value: object) -> date | None:
+    if not isinstance(value, str) or DATE_PATTERN.fullmatch(value) is None:
+        return None
+    try:
+        return date.fromisoformat(value)
+    except ValueError:
+        return None

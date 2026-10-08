@@ -104,6 +104,14 @@ export function buildProductPayload(form, { mode, version }) {
   return payload
 }
 
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
+
+function isRealDate(value) {
+  if (!ISO_DATE.test(value)) return false
+  const parsed = new Date(`${value}T00:00:00Z`)
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value
+}
+
 export function validateOfferForm(offer) {
   const errors = {}
   const text = offer.text.trim()
@@ -115,13 +123,45 @@ export function validateOfferForm(offer) {
   if (offer.link !== '' && (offer.link.length > OFFER_LINK_MAX || safeLink(offer.link) === null)) {
     errors.link = 'Link must start with a single / (e.g. /catalogue) or https://.'
   }
+  const start = offer.startDate ?? ''
+  const end = offer.endDate ?? ''
+  if (start !== '' && !isRealDate(start)) errors.startDate = 'Choose a valid start date.'
+  if (end !== '' && !isRealDate(end)) errors.endDate = 'Choose a valid end date.'
+  if (!errors.startDate && !errors.endDate && start !== '' && end !== '' && end < start) {
+    errors.endDate = 'The end date cannot be before the start date.'
+  }
   return errors
 }
 
 export function buildOfferPayload(offer) {
-  return {
+  const payload = {
     enabled: offer.enabled === true,
     text: offer.text.trim(),
     link: offer.link,
   }
+  if ((offer.startDate ?? '') !== '') payload.startDate = offer.startDate
+  if ((offer.endDate ?? '') !== '') payload.endDate = offer.endDate
+  return payload
 }
+
+// Plain-words status for the admin; `todayIso` is today's date in India (YYYY-MM-DD).
+export function offerStatusLabel(offer, todayIso) {
+  if (!offer.enabled) return 'Off'
+  if (offer.startDate && todayIso < offer.startDate) return `Scheduled, starts ${offer.startDate}`
+  if (offer.endDate && todayIso > offer.endDate) return `Ended on ${offer.endDate}`
+  return offer.endDate ? `Showing now, until ${offer.endDate}` : 'Showing now'
+}
+
+export function todayInIndia(now = new Date()) {
+  return new Date(now.getTime() + 330 * 60 * 1000).toISOString().slice(0, 10)
+}
+
+// Case-insensitive match on name, SKU or brand; blank query returns everything.
+export function filterProducts(products, query) {
+  const needle = String(query ?? '').trim().toLowerCase()
+  if (!needle) return products
+  return products.filter((p) =>
+    [p.name, p.sku, p.brand].some((v) => typeof v === 'string' && v.toLowerCase().includes(needle)),
+  )
+}
+

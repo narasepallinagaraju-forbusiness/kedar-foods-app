@@ -122,6 +122,7 @@ def _json(response: dict[str, Any]) -> dict[str, Any]:
         "POST /admin/products/{id}/archive",
         "POST /admin/products/{id}/restore",
         "POST /admin/catalog-index/rebuild",
+        "POST /admin/products/import",
     ],
 )
 def test_every_route_requires_the_admin_key(route: str) -> None:

@@ -63,6 +63,14 @@ def handler(
                     400, {"error": "validation_failed", "details": error.errors}
                 )
             try:
+                existing = config_table.get_item(Key={"configKey": "site"}).get("Item")
+                stored = (
+                    existing.get("offerBanner")
+                    if isinstance(existing, Mapping)
+                    else None
+                )
+                if isinstance(stored, Mapping) and isinstance(stored.get("image"), str):
+                    offer["image"] = stored["image"]
                 config_table.update_item(
                     Key={"configKey": "site"},
                     UpdateExpression="SET offerBanner = :offer",

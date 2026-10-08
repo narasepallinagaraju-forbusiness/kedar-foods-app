@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { safeLink } from '@/lib/api/safe-link.mjs'
+import { getCatalogImageUrl } from '@/lib/api/catalog.mjs'
 
 const SEEN_KEY = 'kedar_offer_popup_seen'
 
@@ -29,6 +30,10 @@ export default function OfferPopup({ offer, loaded }) {
 
   if (!open || !offer?.enabled) return null
   const offerLink = safeLink(offer.link)
+  const posterUrl =
+    typeof offer.image === 'string' && offer.image.startsWith('media/offer/')
+      ? getCatalogImageUrl(offer.image)
+      : null
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center px-4">
@@ -42,6 +47,16 @@ export default function OfferPopup({ offer, loaded }) {
           <X className="h-5 w-5" />
         </button>
         <div className="p-5 text-center">
+          {posterUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={posterUrl}
+              alt=""
+              decoding="async"
+              style={{ display: 'block', margin: '0 auto 16px', maxHeight: '45vh', maxWidth: '100%', width: 'auto', height: 'auto', objectFit: 'contain' }}
+              className="rounded-xl"
+            />
+          )}
           <h3 className="text-xl font-extrabold text-gray-900">{offer.text}</h3>
           {offerLink && (
             <a

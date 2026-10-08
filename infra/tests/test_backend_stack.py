@@ -14,6 +14,7 @@ from backend_stack import BackendStack
 ADMIN_ROUTES = {
     "GET /admin/products",
     "POST /admin/products",
+    "POST /admin/products/import",
     "GET /admin/products/{id}",
     "PUT /admin/products/{id}",
     "POST /admin/products/{id}/archive",
@@ -21,6 +22,10 @@ ADMIN_ROUTES = {
     "POST /admin/catalog-index/rebuild",
     "GET /admin/site-config",
     "PUT /admin/site-config/offer",
+    "PUT /admin/products/{id}/images/{slot}",
+    "POST /admin/products/{id}/images/{slot}/remove",
+    "PUT /admin/site-config/offer/image",
+    "POST /admin/site-config/offer/image/remove",
 }
 
 def _stack(
@@ -117,9 +122,16 @@ def test_http_api_routes_cors_and_default_throttling() -> None:
     assert settings["ThrottlingBurstLimit"] == 40
     route_settings = stage["RouteSettings"]
     assert set(route_settings) == set(ADMIN_ROUTES)
-    for value in route_settings.values():
-        assert value["ThrottlingRateLimit"] == 5
-        assert value["ThrottlingBurstLimit"] == 10
+    for route_key, value in route_settings.items():
+        if route_key == "POST /admin/products/import":
+            assert value["ThrottlingRateLimit"] == 1
+            assert value["ThrottlingBurstLimit"] == 2
+        elif "/image" in route_key:
+            assert value["ThrottlingRateLimit"] == 2
+            assert value["ThrottlingBurstLimit"] == 5
+        else:
+            assert value["ThrottlingRateLimit"] == 5
+            assert value["ThrottlingBurstLimit"] == 10
 
 
 def test_every_admin_route_uses_an_admin_lambda_integration() -> None:
@@ -154,7 +166,7 @@ def test_every_admin_route_uses_an_admin_lambda_integration() -> None:
 def test_lambda_runtime_architecture_configuration_and_shared_asset() -> None:
     template = _template(_stack())
     functions = template.find_resources("AWS::Lambda::Function")
-    assert len(functions) == 4
+    assert len(functions) == 5
     handlers: set[str] = set()
     code_keys: set[str] = set()
     for resource in functions.values():
@@ -170,11 +182,12 @@ def test_lambda_runtime_architecture_configuration_and_shared_asset() -> None:
         "handlers.get_site_config.handler",
         "handlers.admin_products.handler",
         "handlers.admin_site_config.handler",
+        "handlers.admin_images.handler",
     }
     assert len(code_keys) == 1
 
     log_groups = template.find_resources("AWS::Logs::LogGroup")
-    assert len(log_groups) == 4
+    assert len(log_groups) == 5
     for log_group in log_groups.values():
         assert log_group["Properties"]["RetentionInDays"] == 30
 
@@ -230,8 +243,8 @@ def test_inline_iam_policies_are_exact_read_only_scoped_statements() -> None:
         role_ref = policy["Properties"]["Roles"][0]["Ref"]
         statements_by_function[role_ref] = statements
 
-    assert len(functions) == 4
-    assert len(statements_by_function) == 4
+    assert len(functions) == 5
+    assert len(statements_by_function) == 5
     for function in functions.values():
         props = function["Properties"]
         if props["Handler"].startswith("handlers.admin_"):
@@ -351,6 +364,35 @@ def test_admin_s3_write_is_limited_to_the_index_object() -> None:
     assert json.dumps(s3_statements[0]["Resource"]).endswith(
         'kedar-foods-app-prod-data-media/data/catalog-index.json"]]}'
     )
+
+
+def test_admin_image_function_can_only_write_picture_and_index_keys() -> None:
+    template = _template(_stack())
+    statements = _admin_statements(template, "handlers.admin_images.handler")
+
+    assert _actions(statements) == {
+        "dynamodb:GetItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:Scan",
+        "s3:PutObject",
+        "ssm:GetParameter",
+    }
+    s3_statements = [s for s in statements if "s3:PutObject" in _actions([s])]
+    assert len(s3_statements) == 1
+    assert s3_statements[0]["Action"] == "s3:PutObject"
+    resources = json.dumps(s3_statements[0]["Resource"])
+    for suffix in ("/data/catalog-index.json", "/media/products/*", "/media/offer/*"):
+        assert suffix in resources
+    assert "incoming" not in resources
+    for statement in statements:
+        assert statement["Resource"] != "*"
+        assert "*" not in json.dumps(statement["Action"])
+    assert not _actions(statements) & {
+        "dynamodb:PutItem",
+        "dynamodb:DeleteItem",
+        "s3:DeleteObject",
+        "s3:GetObject",
+    }
 
 
 def test_admin_key_parameter_is_referenced_by_name_only() -> None:

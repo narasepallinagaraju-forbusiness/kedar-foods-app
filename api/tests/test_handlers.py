@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Callable
+from datetime import UTC, datetime
 from decimal import Decimal
 from importlib import reload
 from typing import Any, cast
@@ -303,6 +304,81 @@ def test_product_decimal_values_are_json_numbers_and_missing_image_is_omitted() 
     body = _body(response)
     assert body["quantities"] == [0.5, 1]
     assert "image" not in body
+
+
+def test_product_gallery_is_public_only_for_valid_media_keys_and_max_two() -> None:
+    def pic(name: str) -> dict[str, str]:
+        return {
+            "card": f"media/products/prod_101/{name}-card-v1.webp",
+            "main": f"media/products/prod_101/{name}-main-v1.webp",
+        }
+
+    item = _published_product(
+        gallery=[
+            pic("a"),
+            {"card": "incoming/x.webp", "main": "media/y.webp"},
+            "junk",
+            pic("b"),
+            pic("c"),
+        ]
+    )
+    response = get_product.handler(
+        {"pathParameters": {"slug": "sample-product"}},
+        None,
+        table=FakeProductsTable([item]),
+    )
+
+    assert _body(response)["gallery"] == [pic("a")]
+
+    plain = get_product.handler(
+        {"pathParameters": {"slug": "sample-product"}},
+        None,
+        table=FakeProductsTable([_published_product(gallery=[])]),
+    )
+    assert "gallery" not in _body(plain)
+
+
+def test_site_config_exposes_poster_only_under_media_offer() -> None:
+    def image(value: object) -> object:
+        table = FakeSiteConfigTable(
+            {
+                "configKey": "site",
+                "offerBanner": {"enabled": True, "text": "x", "image": value},
+            }
+        )
+        response = get_site_config.handler({}, None, table=table)
+        return _body(response)["offerBanner"].get("image")
+
+    assert image("media/offer/poster-v1.webp") == "media/offer/poster-v1.webp"
+    assert image("incoming/x.webp") is None
+    assert image(5) is None
+
+
+def test_site_config_hides_offer_outside_schedule_in_ist() -> None:
+    def banner(now: datetime, **dates: str) -> dict[str, Any]:
+        table = FakeSiteConfigTable(
+            {
+                "configKey": "site",
+                "offerBanner": {
+                    "enabled": True,
+                    "text": "Offer",
+                    "link": "",
+                    **dates,
+                },
+            }
+        )
+        response = get_site_config.handler({}, None, table=table, now=now)
+        return cast(dict[str, Any], _body(response)["offerBanner"])
+
+    # 2026-10-08 20:00 UTC is already 2026-10-09 01:30 in India.
+    now = datetime(2026, 10, 8, 20, 0, tzinfo=UTC)
+
+    assert banner(now)["enabled"] is True
+    assert banner(now, startDate="2026-10-09")["enabled"] is True
+    assert banner(now, startDate="2026-10-10")["enabled"] is False
+    assert banner(now, endDate="2026-10-09")["enabled"] is True
+    assert banner(now, endDate="2026-10-08")["enabled"] is False
+    assert "startDate" not in banner(now, startDate="2026-10-01")
 
 
 def test_site_config_returns_only_allowlisted_shape_and_converts_decimal() -> None:

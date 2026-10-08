@@ -73,6 +73,33 @@ def test_put_updates_only_the_offer() -> None:
     assert table.item["categories"] == SITE_CONFIG["categories"]
 
 
+def test_put_keeps_the_stored_poster_and_stores_valid_dates() -> None:
+    stored = {
+        **SITE_CONFIG,
+        "offerBanner": {
+            "enabled": False,
+            "text": "",
+            "link": "",
+            "image": "media/offer/poster-v9.webp",
+        },
+    }
+    table = FakeSiteConfigTable(stored)
+    offer = {
+        "enabled": True,
+        "text": "Sale",
+        "startDate": "2026-10-01",
+        "endDate": "2026-10-31",
+    }
+
+    response = _call(table, "PUT /admin/site-config/offer", offer)
+
+    assert response["statusCode"] == 200
+    assert table.item is not None
+    assert table.item["offerBanner"]["image"] == "media/offer/poster-v9.webp"
+    assert table.item["offerBanner"]["startDate"] == "2026-10-01"
+    assert table.item["offerBanner"]["endDate"] == "2026-10-31"
+
+
 @pytest.mark.parametrize(
     "body",
     [

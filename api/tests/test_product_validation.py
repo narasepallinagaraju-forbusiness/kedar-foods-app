@@ -224,3 +224,47 @@ def test_offer_rejects_invalid_values(body: dict[str, Any], field: str) -> None:
 def test_offer_rejects_non_objects() -> None:
     with pytest.raises(ProductValidationError):
         validate_offer("on")
+
+
+def test_offer_accepts_schedule_dates_and_drops_blank_ones() -> None:
+    assert validate_offer(
+        {
+            "enabled": True,
+            "text": "x",
+            "startDate": "2026-10-01",
+            "endDate": "2026-10-31",
+        }
+    ) == {
+        "enabled": True,
+        "text": "x",
+        "link": "",
+        "startDate": "2026-10-01",
+        "endDate": "2026-10-31",
+    }
+    assert validate_offer({"enabled": False, "startDate": "", "endDate": None}) == {
+        "enabled": False,
+        "text": "",
+        "link": "",
+    }
+    assert validate_offer(
+        {"enabled": False, "startDate": "2026-10-05", "endDate": "2026-10-05"}
+    )["endDate"] == "2026-10-05"
+
+
+@pytest.mark.parametrize(
+    ("body", "field"),
+    [
+        ({"enabled": False, "startDate": "01-10-2026"}, "startDate"),
+        ({"enabled": False, "endDate": "2026-02-30"}, "endDate"),
+        ({"enabled": False, "startDate": 20261001}, "startDate"),
+        (
+            {"enabled": False, "startDate": "2026-10-10", "endDate": "2026-10-09"},
+            "endDate",
+        ),
+    ],
+)
+def test_offer_rejects_bad_schedule(body: dict[str, Any], field: str) -> None:
+    with pytest.raises(ProductValidationError) as raised:
+        validate_offer(body)
+
+    assert field in _fields(raised.value)

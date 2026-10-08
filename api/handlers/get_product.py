@@ -52,6 +52,20 @@ def _public_product(item: Mapping[str, Any]) -> dict[str, Any]:
         if image:
             public_item["image"] = image
 
+    raw_gallery = item.get("gallery")
+    if isinstance(raw_gallery, list):
+        gallery = [
+            {field: entry[field] for field in ("card", "main")}
+            for entry in raw_gallery[:2]
+            if isinstance(entry, Mapping)
+            and all(
+                isinstance(entry.get(field), str) and entry[field].startswith("media/")
+                for field in ("card", "main")
+            )
+        ]
+        if gallery:
+            public_item["gallery"] = gallery
+
     return public_item
 
 

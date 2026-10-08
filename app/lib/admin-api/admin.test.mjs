@@ -7,8 +7,11 @@ import {
   buildOfferPayload,
   buildProductPayload,
   EMPTY_PRODUCT_FORM,
+  filterProducts,
+  offerStatusLabel,
   parseQuantities,
   productToForm,
+  todayInIndia,
   validateOfferForm,
   validateProductForm,
 } from './validation.mjs'
@@ -266,4 +269,36 @@ test('offer payload contains only enabled, text and link', () => {
     buildOfferPayload({ enabled: true, text: ' Sale ', link: '/catalogue', image: 'x' }),
     { enabled: true, text: 'Sale', link: '/catalogue' },
   )
+})
+
+test('offer schedule: payload includes only filled dates, validation checks them', () => {
+  assert.deepEqual(
+    buildOfferPayload({ enabled: true, text: 'Sale', link: '', startDate: '2026-10-01', endDate: '' }),
+    { enabled: true, text: 'Sale', link: '', startDate: '2026-10-01' },
+  )
+  const base = { enabled: false, text: '', link: '' }
+  assert.deepEqual(validateOfferForm({ ...base, startDate: '2026-10-01', endDate: '2026-10-01' }), {})
+  assert.ok(validateOfferForm({ ...base, startDate: '2026-02-30' }).startDate)
+  assert.ok(validateOfferForm({ ...base, endDate: 'tomorrow' }).endDate)
+  assert.ok(validateOfferForm({ ...base, startDate: '2026-10-10', endDate: '2026-10-09' }).endDate)
+})
+
+test('offer status label and India date', () => {
+  assert.equal(offerStatusLabel({ enabled: false }, '2026-10-09'), 'Off')
+  assert.match(offerStatusLabel({ enabled: true, startDate: '2026-10-10' }, '2026-10-09'), /Scheduled/)
+  assert.match(offerStatusLabel({ enabled: true, endDate: '2026-10-08' }, '2026-10-09'), /Ended/)
+  assert.equal(offerStatusLabel({ enabled: true }, '2026-10-09'), 'Showing now')
+  assert.equal(todayInIndia(new Date('2026-10-08T20:00:00Z')), '2026-10-09')
+})
+
+test('filterProducts matches name, sku and brand, ignoring case and blanks', () => {
+  const items = [
+    { name: 'Milk Powder', sku: 'MILK-1', brand: 'Amul' },
+    { name: 'Vanilla Essence', sku: 'VAN-1', brand: 'Rose' },
+  ]
+  assert.equal(filterProducts(items, '  '), items)
+  assert.deepEqual(filterProducts(items, 'milk'), [items[0]])
+  assert.deepEqual(filterProducts(items, 'van-1'), [items[1]])
+  assert.deepEqual(filterProducts(items, 'AMUL'), [items[0]])
+  assert.deepEqual(filterProducts(items, 'zzz'), [])
 })

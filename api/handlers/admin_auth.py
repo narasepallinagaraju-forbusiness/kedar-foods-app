@@ -100,7 +100,9 @@ def authorize(
     return None
 
 
-def parse_json_body(event: Mapping[str, Any]) -> object:
+def parse_json_body(
+    event: Mapping[str, Any], max_bytes: int = MAX_BODY_BYTES
+) -> object:
     raw = event.get("body")
     if not isinstance(raw, str) or raw == "":
         raise BodyError(400, "body_required")
@@ -111,7 +113,7 @@ def parse_json_body(event: Mapping[str, Any]) -> object:
             raise BodyError(400, "invalid_json") from error
     else:
         data = raw.encode("utf-8")
-    if len(data) > MAX_BODY_BYTES:
+    if len(data) > max_bytes:
         raise BodyError(413, "body_too_large")
     try:
         return json.loads(data.decode("utf-8"))

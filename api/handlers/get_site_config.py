@@ -5,13 +5,16 @@ from __future__ import annotations
 import logging
 import os
 from collections.abc import Mapping
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Any
 
 from .common import error_response, json_response
 from .dynamodb import SiteConfigTable, create_site_config_table
+from .product_validation import DATE_PATTERN
 
 LOGGER = logging.getLogger(__name__)
+IST = timezone(timedelta(hours=5, minutes=30))
 
 
 def _copy_strings(source: Mapping[str, Any], fields: tuple[str, ...]) -> dict[str, str]:
@@ -22,7 +25,18 @@ def _copy_strings(source: Mapping[str, Any], fields: tuple[str, ...]) -> dict[st
     }
 
 
-def _public_config(item: Mapping[str, Any]) -> dict[str, Any]:
+def _in_schedule(banner: Mapping[str, Any], today: str) -> bool:
+    """ISO dates compare correctly as text; an unusable date is ignored."""
+    start = banner.get("startDate")
+    end = banner.get("endDate")
+    if isinstance(start, str) and DATE_PATTERN.fullmatch(start) and today < start:
+        return False
+    if isinstance(end, str) and DATE_PATTERN.fullmatch(end) and today > end:
+        return False
+    return True
+
+
+def _public_config(item: Mapping[str, Any], today: str) -> dict[str, Any]:
     public_config: dict[str, Any] = {}
 
     raw_banner = item.get("offerBanner")
@@ -32,6 +46,11 @@ def _public_config(item: Mapping[str, Any]) -> dict[str, Any]:
         if isinstance(enabled, bool):
             banner["enabled"] = enabled
         banner.update(_copy_strings(raw_banner, ("text", "link")))
+        poster = raw_banner.get("image")
+        if isinstance(poster, str) and poster.startswith("media/offer/"):
+            banner["image"] = poster
+        if banner.get("enabled") is True and not _in_schedule(raw_banner, today):
+            banner["enabled"] = False
         if banner:
             public_config["offerBanner"] = banner
 
@@ -81,8 +100,10 @@ def handler(
     context: object,
     *,
     table: SiteConfigTable | None = None,
+    now: datetime | None = None,
 ) -> dict[str, Any]:
     del event, context
+    today = (now if now is not None else datetime.now(IST)).astimezone(IST)
     try:
         config_table = table if table is not None else create_site_config_table()
         result = config_table.get_item(Key={"configKey": "site"})
@@ -96,7 +117,7 @@ def handler(
 
     return json_response(
         200,
-        _public_config(item),
+        _public_config(item, today.date().isoformat()),
         cache_control="public, max-age=0, must-revalidate",
     )
 

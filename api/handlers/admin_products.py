@@ -33,6 +33,8 @@ from .product_validation import (
 LOGGER = logging.getLogger(__name__)
 ACTOR = "admin-key"
 INDEX_KEY = "data/catalog-index.json"
+MAX_IMPORT_ROWS = 50
+MAX_IMPORT_BODY_BYTES = 256 * 1024
 PRODUCT_ID_PATTERN = re.compile(r"^prod_[0-9a-f]{10}$")
 REQUIRED_TO_SHOW = ("slug", "name", "brand", "category", "businessType", "quantities")
 
@@ -159,6 +161,44 @@ def _validation_response(error: ProductValidationError) -> dict[str, Any]:
     return _no_store(400, {"error": "validation_failed", "details": error.errors})
 
 
+def _insert_product(
+    clean: dict[str, Any],
+    products: AdminProductsTable,
+    now: datetime,
+) -> dict[str, Any] | None:
+    """Write a new product; return None if the SKU already exists."""
+    sku = clean["sku"]
+    slug = unique_slug(
+        clean["name"],
+        clean["brand"],
+        sku,
+        lambda candidate: _slug_exists(products, candidate),
+    )
+    timestamp = _iso(now)
+    item: dict[str, Any] = {
+        **clean,
+        "productId": product_id_from_sku(sku),
+        "slug": slug,
+        "version": 1,
+        "createdAt": timestamp,
+        "updatedAt": timestamp,
+        "createdBy": ACTOR,
+        "updatedBy": ACTOR,
+    }
+    item.setdefault("description", "")
+    item.setdefault("isTrending", False)
+    item.setdefault("sortRank", 0)
+    try:
+        products.put_item(
+            Item=item, ConditionExpression="attribute_not_exists(productId)"
+        )
+    except Exception as error:
+        if _condition_failed(error):
+            return None
+        raise
+    return item
+
+
 def _create(
     event: Mapping[str, Any],
     products: AdminProductsTable,
@@ -177,36 +217,9 @@ def _create(
     except ProductValidationError as error:
         return _validation_response(error)
 
-    sku = clean["sku"]
-    product_id = product_id_from_sku(sku)
-    slug = unique_slug(
-        clean["name"],
-        clean["brand"],
-        sku,
-        lambda candidate: _slug_exists(products, candidate),
-    )
-    timestamp = _iso(now)
-    item: dict[str, Any] = {
-        **clean,
-        "productId": product_id,
-        "slug": slug,
-        "version": 1,
-        "createdAt": timestamp,
-        "updatedAt": timestamp,
-        "createdBy": ACTOR,
-        "updatedBy": ACTOR,
-    }
-    item.setdefault("description", "")
-    item.setdefault("isTrending", False)
-    item.setdefault("sortRank", 0)
-    try:
-        products.put_item(
-            Item=item, ConditionExpression="attribute_not_exists(productId)"
-        )
-    except Exception as error:
-        if _condition_failed(error):
-            return error_response(409, "duplicate_sku")
-        raise
+    item = _insert_product(clean, products, now)
+    if item is None:
+        return error_response(409, "duplicate_sku")
     return _write_result(
         item,
         rebuild=item["status"] == "PUBLISHED",
@@ -215,6 +228,85 @@ def _create(
         now=now,
         status_code=201,
     )
+
+
+def _import_products(
+    event: Mapping[str, Any],
+    products: AdminProductsTable,
+    config_table: AdminSiteConfigTable,
+    s3_client: S3Writer | None,
+    now: datetime,
+) -> dict[str, Any]:
+    """Create many products. Never edits existing ones; duplicates are skipped."""
+    body = parse_json_body(event, MAX_IMPORT_BODY_BYTES)
+    rows = body.get("rows") if isinstance(body, Mapping) else None
+    if not isinstance(rows, list) or not 1 <= len(rows) <= MAX_IMPORT_ROWS:
+        return _no_store(
+            400,
+            {
+                "error": "validation_failed",
+                "details": [
+                    {
+                        "field": "rows",
+                        "message": f"must be a list of 1 to {MAX_IMPORT_ROWS} rows",
+                    }
+                ],
+            },
+        )
+    try:
+        categories = _allowed_categories(config_table)
+    except CategoriesUnavailableError as error:
+        LOGGER.error("Categories unavailable (%s)", error)
+        return error_response(503, "categories_unavailable")
+
+    results: list[dict[str, Any]] = []
+    published_created = False
+    for index, row in enumerate(rows):
+        sku = row.get("sku") if isinstance(row, Mapping) else None
+        entry: dict[str, Any] = {
+            "row": index,
+            "sku": sku if isinstance(sku, str) else "",
+        }
+        try:
+            if not isinstance(row, Mapping):
+                raise ProductValidationError(
+                    [{"field": "row", "message": "must be an object"}]
+                )
+            candidate = {**row, "status": row.get("status") or "PUBLISHED"}
+            clean = validate_create_product(candidate, categories)
+        except ProductValidationError as error:
+            entry["result"] = "failed"
+            entry["errors"] = error.errors
+            results.append(entry)
+            continue
+        try:
+            item = _insert_product(clean, products, now)
+        except Exception as error:
+            LOGGER.error("Import row failed (%s)", type(error).__name__)
+            entry["result"] = "failed"
+            entry["errors"] = [{"field": "row", "message": "could not be saved"}]
+            results.append(entry)
+            continue
+        if item is None:
+            entry["result"] = "skipped"
+        else:
+            entry["result"] = "created"
+            published_created = published_created or item["status"] == "PUBLISHED"
+        results.append(entry)
+
+    counts = {
+        name: sum(1 for r in results if r["result"] == name)
+        for name in ("created", "skipped", "failed")
+    }
+    response: dict[str, Any] = {**counts, "results": results}
+    if published_created:
+        try:
+            writer = s3_client if s3_client is not None else create_s3_client()
+            response["indexRebuilt"] = rebuild_index(products, writer, now)
+        except Exception as error:
+            LOGGER.error("S3 client failed (%s)", type(error).__name__)
+            response["indexRebuilt"] = False
+    return _no_store(200, response)
 
 
 def _update(
@@ -383,6 +475,8 @@ def handler(
                 key=lambda item: (item.get("sortRank", 0), item.get("name", "")),
             )
             return _no_store(200, {"products": items})
+        if route == "POST /admin/products/import":
+            return _import_products(event, products, config, s3_client, moment)
         if route == "POST /admin/products":
             return _create(event, products, config, s3_client, moment)
         if route == "POST /admin/catalog-index/rebuild":

@@ -1,0 +1,5 @@
+sku,name,brand,category,businessType,quantities,description,isTrending,sortRank,status
+SAMPLE-001,Full Cream Milk Powder,Amul,Dairy,Bakery|Cafe,500g|1kg|25kg,Spray-dried milk powder for baking and beverages.,true,10,ARCHIVED
+SAMPLE-002,Dark Compound Chocolate Slab,Morde,Chocolate,Bakery|Cafe|Restaurant,500g|5kg,Dark compound for coating and moulding.,false,20,ARCHIVED
+SAMPLE-003,Vanilla Essence,Rose,Flavours,Bakery,100ml|500ml|1L,,false,0,ARCHIVED
+SAMPLE-004,Full Cream Milk Powder (Vanilla),Amul,Dairy,Bakery|Cafe,500g|1kg|25kg,Spray-dried milk powder for baking and beverages.,true,10,

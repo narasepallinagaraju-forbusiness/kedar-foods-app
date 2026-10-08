@@ -38,6 +38,10 @@ if TYPE_CHECKING:
 INDEX_KEY = "data/catalog-index.json"
 ADMIN_THROTTLE_RATE = 5
 ADMIN_THROTTLE_BURST = 10
+IMAGE_THROTTLE_RATE = 2
+IMAGE_THROTTLE_BURST = 5
+IMPORT_THROTTLE_RATE = 1
+IMPORT_THROTTLE_BURST = 2
 
 
 class BackendStack(Stack):
@@ -208,7 +212,49 @@ class BackendStack(Stack):
                 resources=[site_config_table.table_arn],
             )
         )
-        for admin_function in (admin_products_function, admin_site_config_function):
+        admin_images_function = self._create_read_function(
+            construct_id="AdminImagesFunction",
+            function_name=f"{resource_prefix}-admin-images",
+            handler="handlers.admin_images.handler",
+            code=lambda_code,
+            environment={
+                "PRODUCTS_TABLE_NAME": products_table.table_name,
+                "SITE_CONFIG_TABLE_NAME": site_config_table.table_name,
+                "DATA_BUCKET_NAME": data_bucket_name,
+                "ADMIN_KEY_PARAMETER": admin_key_parameter,
+            },
+        )
+        admin_images_function.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=[
+                    "dynamodb:GetItem",
+                    "dynamodb:UpdateItem",
+                    "dynamodb:Scan",
+                ],
+                resources=[products_table.table_arn],
+            )
+        )
+        admin_images_function.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["dynamodb:GetItem", "dynamodb:UpdateItem"],
+                resources=[site_config_table.table_arn],
+            )
+        )
+        admin_images_function.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["s3:PutObject"],
+                resources=[
+                    index_object_arn,
+                    f"arn:{self.partition}:s3:::{data_bucket_name}/media/products/*",
+                    f"arn:{self.partition}:s3:::{data_bucket_name}/media/offer/*",
+                ],
+            )
+        )
+        for admin_function in (
+            admin_products_function,
+            admin_site_config_function,
+            admin_images_function,
+        ):
             admin_function.add_to_role_policy(
                 iam.PolicyStatement(
                     actions=["ssm:GetParameter"],
@@ -265,12 +311,41 @@ class BackendStack(Stack):
             "AdminSiteConfigIntegration",
             admin_site_config_function,
         )
+        admin_images_integration = apigatewayv2_integrations.HttpLambdaIntegration(
+            "AdminImagesIntegration",
+            admin_images_function,
+        )
         method_enum = apigatewayv2.HttpMethod
         admin_routes = [
             ("/admin/products", method_enum.GET, admin_products_integration),
             ("/admin/products", method_enum.POST, admin_products_integration),
+            (
+                "/admin/products/import",
+                method_enum.POST,
+                admin_products_integration,
+            ),
             ("/admin/products/{id}", method_enum.GET, admin_products_integration),
             ("/admin/products/{id}", method_enum.PUT, admin_products_integration),
+            (
+                "/admin/products/{id}/images/{slot}",
+                method_enum.PUT,
+                admin_images_integration,
+            ),
+            (
+                "/admin/products/{id}/images/{slot}/remove",
+                method_enum.POST,
+                admin_images_integration,
+            ),
+            (
+                "/admin/site-config/offer/image",
+                method_enum.PUT,
+                admin_images_integration,
+            ),
+            (
+                "/admin/site-config/offer/image/remove",
+                method_enum.POST,
+                admin_images_integration,
+            ),
             (
                 "/admin/products/{id}/archive",
                 method_enum.POST,
@@ -321,8 +396,20 @@ class BackendStack(Stack):
             "RouteSettings",
             {
                 f"{method.value} {path}": {
-                    "ThrottlingRateLimit": ADMIN_THROTTLE_RATE,
-                    "ThrottlingBurstLimit": ADMIN_THROTTLE_BURST,
+                    "ThrottlingRateLimit": (
+                        IMPORT_THROTTLE_RATE
+                        if path == "/admin/products/import"
+                        else IMAGE_THROTTLE_RATE
+                        if "/image" in path
+                        else ADMIN_THROTTLE_RATE
+                    ),
+                    "ThrottlingBurstLimit": (
+                        IMPORT_THROTTLE_BURST
+                        if path == "/admin/products/import"
+                        else IMAGE_THROTTLE_BURST
+                        if "/image" in path
+                        else ADMIN_THROTTLE_BURST
+                    ),
                 }
                 for path, method, _integration in admin_routes
             },

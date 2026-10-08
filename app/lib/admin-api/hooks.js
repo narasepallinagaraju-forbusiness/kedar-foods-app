@@ -85,3 +85,52 @@ export function useSaveOffer() {
     },
   })
 }
+
+export function useImportProducts() {
+  return useProductMutation((rows) =>
+    adminFetch({ method: 'POST', path: '/admin/products/import', body: { rows } }),
+  )
+}
+
+export function useUploadProductPicture() {
+  return useProductMutation(({ id, slot, version, card, main }) =>
+    adminFetch({
+      method: 'PUT',
+      path: `/admin/products/${encodeURIComponent(id)}/images/${slot}`,
+      body: { version, card, main },
+    }),
+  )
+}
+
+export function useRemoveProductPicture() {
+  return useProductMutation(({ id, slot, version }) =>
+    adminFetch({
+      method: 'POST',
+      path: `/admin/products/${encodeURIComponent(id)}/images/${slot}/remove`,
+      body: { version },
+    }),
+  )
+}
+
+function useOfferImageMutation(request) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: request,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: OFFER_KEY })
+      queryClient.invalidateQueries({ queryKey: ['customer', 'site-config'] })
+    },
+  })
+}
+
+export function useUploadPoster() {
+  return useOfferImageMutation(({ poster }) =>
+    adminFetch({ method: 'PUT', path: '/admin/site-config/offer/image', body: { poster } }),
+  )
+}
+
+export function useRemovePoster() {
+  return useOfferImageMutation(() =>
+    adminFetch({ method: 'POST', path: '/admin/site-config/offer/image/remove', body: {} }),
+  )
+}

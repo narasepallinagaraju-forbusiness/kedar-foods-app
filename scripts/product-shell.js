@@ -27,11 +27,17 @@ export default function ProductShell() {
   const slug = pathname ? parseProductSlug(pathname) : undefined
   const [packSelection, setPackSelection] = useState(null)
   const [imageFailure, setImageFailure] = useState(null)
+  const [picked, setPicked] = useState(null)
   const productQuery = useProduct(slug)
   const product = productQuery.data
   const catalogQuery = useCatalogIndex(Boolean(product))
   const quantities = Array.isArray(product?.quantities) ? product.quantities : []
-  const mainImageUrl = product?.image?.main ? `/${product.image.main}` : null
+  const pictures = [product?.image, ...(Array.isArray(product?.gallery) ? product.gallery : [])]
+    .filter((p) => p && typeof p.card === 'string' && typeof p.main === 'string')
+    .slice(0, 3)
+  const galleryMains = pictures.map((p) => p.main)
+  const activeIndex = picked && picked.productId === product?.id && picked.index < pictures.length ? picked.index : 0
+  const mainImageUrl = galleryMains[activeIndex] ? `/${galleryMains[activeIndex]}` : null
   const selectedPack = packSelection && packSelection.productId === product?.id
     ? packSelection.value
     : quantities[0] ?? ''
@@ -91,7 +97,7 @@ export default function ProductShell() {
         {product && (
           <>
             <article className="mt-6 grid overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm md:grid-cols-2">
-              <div className="flex min-h-72 items-center justify-center bg-gray-100 p-6 sm:min-h-96 sm:p-10">
+              <div className="flex min-h-72 flex-col items-center justify-center bg-gray-100 p-6 sm:min-h-96 sm:p-10">
                 {mainImageUrl && !imageFailed ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -102,6 +108,42 @@ export default function ProductShell() {
                   />
                 ) : (
                   <span className="text-sm text-gray-500">Product image unavailable</span>
+                )}
+                {pictures.length > 1 && (
+                  <div
+                    role="group"
+                    aria-label="Product pictures"
+                    style={{ display: 'flex', gap: 8, marginTop: 16, overflowX: 'auto', maxWidth: '100%' }}
+                  >
+                    {pictures.map((p, index) => (
+                      <button
+                        key={p.card}
+                        type="button"
+                        onClick={() => setPicked({ productId: product.id, index })}
+                        aria-label={`Show picture ${index + 1}`}
+                        aria-pressed={index === activeIndex}
+                        style={{
+                          flex: '0 0 auto',
+                          width: 64,
+                          height: 64,
+                          padding: 0,
+                          overflow: 'hidden',
+                          borderRadius: 8,
+                          border: index === activeIndex ? '2px solid #f59e0b' : '2px solid #e5e7eb',
+                          background: '#fff',
+                        }}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={`/${p.card}`}
+                          alt=""
+                          loading="lazy"
+                          decoding="async"
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      </button>
+                    ))}
+                  </div>
                 )}
               </div>
 

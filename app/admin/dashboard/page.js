@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Wheat, LogOut, Pencil, X, Save, Flame, Plus, Megaphone, Eye, EyeOff, AlertCircle, RefreshCw } from 'lucide-react'
+import { Wheat, LogOut, Pencil, X, Save, Flame, Plus, Megaphone, Eye, EyeOff, AlertCircle, RefreshCw, Search, Upload } from 'lucide-react'
 import { BUSINESS_TYPES } from '@/lib/data'
 import { useSiteConfig } from '@/lib/api/hooks'
 import { getSiteCategories } from '@/lib/api/site-config'
@@ -13,15 +13,32 @@ import {
   useAdminProducts,
   useCreateProduct,
   useRebuildIndex,
+  useRemovePoster,
+  useRemoveProductPicture,
   useSaveOffer,
   useSetProductVisibility,
   useUpdateProduct,
+  useUploadPoster,
+  useUploadProductPicture,
 } from '@/lib/admin-api/hooks'
+import {
+  CARD_SIDE,
+  MAIN_SIDE,
+  MAX_PICTURES,
+  POSTER_SIDE,
+  prepareImages,
+  productPictures,
+} from '@/lib/admin-api/image-prepare.mjs'
+import PictureSlot from './PictureSlot'
+import ImportDialog from './ImportDialog'
 import {
   buildOfferPayload,
   buildProductPayload,
   EMPTY_PRODUCT_FORM,
+  filterProducts,
+  offerStatusLabel,
   productToForm,
+  todayInIndia,
   validateOfferForm,
   validateProductForm,
 } from '@/lib/admin-api/validation.mjs'
@@ -40,6 +57,8 @@ export default function AdminDashboardPage() {
   const [form, setForm] = useState(EMPTY_PRODUCT_FORM)
   const [formErrors, setFormErrors] = useState({})
   const [notice, setNotice] = useState(null) // { type: 'error' | 'warn' | 'ok', text }
+  const [searchText, setSearchText] = useState('')
+  const [importOpen, setImportOpen] = useState(false)
   const [offerForm, setOfferForm] = useState(null)
   const [offerErrors, setOfferErrors] = useState({})
 
@@ -51,8 +70,12 @@ export default function AdminDashboardPage() {
   const setVisibility = useSetProductVisibility()
   const rebuildIndex = useRebuildIndex()
   const saveOffer = useSaveOffer()
-
+  const uploadPicture = useUploadProductPicture()
+  const removePicture = useRemoveProductPicture()
+  const uploadPoster = useUploadPoster()
+  const removePoster = useRemovePoster()
   const products = productsQuery.data ?? []
+  const shownProducts = filterProducts(products, searchText)
   const categoryNames = getSiteCategories(siteConfig.data).map((c) => c.name)
 
   useEffect(() => {
@@ -71,6 +94,8 @@ export default function AdminDashboardPage() {
         enabled: offerQuery.data.enabled === true,
         text: offerQuery.data.text ?? '',
         link: offerQuery.data.link ?? '',
+        startDate: offerQuery.data.startDate ?? '',
+        endDate: offerQuery.data.endDate ?? '',
       })
     }
   }, [offerQuery.data, offerForm])
@@ -188,6 +213,55 @@ export default function AdminDashboardPage() {
 
   if (!authed) return null
 
+  // Picture actions throw plain Errors so the picture box can show them itself.
+  const pictureAction = async (action) => {
+    try {
+      return await action()
+    } catch (error) {
+      if (error?.status === 401) {
+        logout()
+      } else if (error?.status === 409) {
+        closeModal()
+        setNotice({ type: 'error', text: error.message })
+      }
+      throw error
+    }
+  }
+
+  const savePicture = (slot) => (source) =>
+    pictureAction(async () => {
+      const { card, main } = await prepareImages(source, { card: CARD_SIDE, main: MAIN_SIDE })
+      const result = await uploadPicture.mutateAsync({
+        id: editing.productId, slot, version: editing.version, card, main,
+      })
+      setEditing(result.product)
+      reportWrite(result, 'Picture saved.')
+    })
+
+  const deletePicture = (slot) => () =>
+    pictureAction(async () => {
+      const result = await removePicture.mutateAsync({
+        id: editing.productId, slot, version: editing.version,
+      })
+      setEditing(result.product)
+      reportWrite(result, 'Picture removed.')
+    })
+
+  const savePoster = (source) =>
+    pictureAction(async () => {
+      const { poster } = await prepareImages(source, { poster: POSTER_SIDE })
+      await uploadPoster.mutateAsync({ poster })
+      setNotice({ type: 'ok', text: 'Poster saved. It reaches the public site within about a minute.' })
+    })
+
+  const deletePoster = () =>
+    pictureAction(async () => {
+      await removePoster.mutateAsync()
+      setNotice({ type: 'ok', text: 'Poster removed.' })
+    })
+
+  const pictures = modalMode === 'edit' && editing ? productPictures(editing) : []
+  const pictureSlots = Math.min(pictures.length + 1, MAX_PICTURES)
   const saving = createProduct.isPending || updateProduct.isPending
   const noticeStyle = {
     error: 'bg-red-50 text-red-700',
@@ -232,7 +306,7 @@ export default function AdminDashboardPage() {
             <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-100 text-amber-600"><Megaphone className="h-5 w-5" /></span>
             <div>
               <h2 className="text-lg font-extrabold text-gray-900">Offer banner</h2>
-              <p className="text-xs text-gray-500">Controls the offer shown on the public site. Poster image and start/end dates are coming later.</p>
+              <p className="text-xs text-gray-500">Controls the offer shown on the public site. Optional start and end dates (India time) show and hide it automatically.</p>
             </div>
           </div>
 
@@ -259,6 +333,29 @@ export default function AdminDashboardPage() {
                 <input value={offerForm.link} onChange={(e) => setOfferForm({ ...offerForm, link: e.target.value })} placeholder="/catalogue or https://..." className={INPUT} />
                 <FieldError message={offerErrors.link} />
               </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-gray-600">Start date (optional)</label>
+                <input type="date" value={offerForm.startDate} onChange={(e) => setOfferForm({ ...offerForm, startDate: e.target.value })} className={INPUT} />
+                <FieldError message={offerErrors.startDate} />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-gray-600">End date (optional, last day shown)</label>
+                <input type="date" value={offerForm.endDate} onChange={(e) => setOfferForm({ ...offerForm, endDate: e.target.value })} className={INPUT} />
+                <FieldError message={offerErrors.endDate} />
+              </div>
+              <p className="text-xs font-semibold text-gray-600 md:col-span-2">
+                Status: <span className="text-amber-700">{offerStatusLabel(offerQuery.data ?? offerForm, todayInIndia())}</span>
+                <span className="font-normal text-gray-400"> (as last saved)</span>
+              </p>
+              <div className="md:col-span-2">
+                <PictureSlot
+                  label="Poster picture (optional, shown in the home page banner)"
+                  currentKey={offerQuery.data?.image}
+                  onSave={savePoster}
+                  onRemove={deletePoster}
+                  disabled={uploadPoster.isPending || removePoster.isPending}
+                />
+              </div>
               <div className="md:col-span-2">
                 <button onClick={submitOffer} disabled={saveOffer.isPending} className="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600 disabled:opacity-60">
                   <Save className="h-4 w-4" /> {saveOffer.isPending ? 'Saving…' : 'Save offer'}
@@ -271,11 +368,30 @@ export default function AdminDashboardPage() {
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-extrabold text-gray-900">Products</h1>
-            <p className="mt-1 text-sm text-gray-500">{products.length} items · changes are saved to the live catalogue</p>
+            <p className="mt-1 text-sm text-gray-500">
+              {searchText.trim() ? `${shownProducts.length} of ${products.length} items` : `${products.length} items`} · changes are saved to the live catalogue
+            </p>
           </div>
-          <button onClick={openCreate} className="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600">
-            <Plus className="h-4 w-4" /> Add Product
-          </button>
+          <div className="flex gap-2">
+            <button onClick={() => setImportOpen(true)} className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">
+              <Upload className="h-4 w-4" /> Import CSV
+            </button>
+            <button onClick={openCreate} className="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600">
+              <Plus className="h-4 w-4" /> Add Product
+            </button>
+          </div>
+        </div>
+
+        <div className="relative mb-4">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <input
+            type="search"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            placeholder="Search by product name, SKU or brand"
+            aria-label="Search products"
+            className={`${INPUT} pl-9`}
+          />
         </div>
 
         {productsQuery.isError && (
@@ -301,7 +417,7 @@ export default function AdminDashboardPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {products.map((p) => {
+                {shownProducts.map((p) => {
                   const visible = p.status === 'PUBLISHED'
                   return (
                     <tr key={p.productId} className={visible ? 'hover:bg-gray-50' : 'bg-gray-50/60 hover:bg-gray-50'}>
@@ -344,6 +460,9 @@ export default function AdminDashboardPage() {
         </div>
       </main>
 
+      {importOpen && (
+        <ImportDialog categories={categoryNames} onClose={() => setImportOpen(false)} />
+      )}
       {modalMode && (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto px-4 py-8">
           <div className="absolute inset-0 bg-black/50" onClick={closeModal} />
@@ -420,7 +539,24 @@ export default function AdminDashboardPage() {
                   </label>
                 </div>
               )}
-              <p className="col-span-2 text-xs text-gray-400">Product images can be added in a later update. Products without an image show a neutral placeholder.</p>
+              {modalMode === 'edit' ? (
+                <div className="col-span-2 space-y-2">
+                  <p className="text-xs font-semibold text-gray-600">Pictures (up to {MAX_PICTURES}; the first is shown on the product card)</p>
+                  {Array.from({ length: pictureSlots }, (_, index) => (
+                    <PictureSlot
+                      key={`${editing.productId}-${index}-${pictures[index]?.card ?? 'empty'}`}
+                      label={`Picture ${index + 1}`}
+                      currentKey={pictures[index]?.card}
+                      onSave={savePicture(index + 1)}
+                      onRemove={deletePicture(index + 1)}
+                      disabled={uploadPicture.isPending || removePicture.isPending}
+                    />
+                  ))}
+                  <p className="text-xs text-gray-400">Pictures are saved straight away; you do not need to press &quot;Save changes&quot;.</p>
+                </div>
+              ) : (
+                <p className="col-span-2 text-xs text-gray-400">Save the product first, then edit it to add pictures. Products without a picture show a neutral placeholder.</p>
+              )}
             </div>
 
             <div className="mt-6 flex justify-end gap-2">
