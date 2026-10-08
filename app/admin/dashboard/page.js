@@ -275,7 +275,7 @@ export default function AdminDashboardPage() {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
           <Link href="/" className="flex items-center gap-2">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500 text-white"><Wheat className="h-4 w-4" /></span>
-            <span className="font-extrabold text-gray-900">Kedar Foods <span className="text-gray-400">/ Admin</span></span>
+            <span className="font-extrabold text-gray-900">Kedhar Foods <span className="text-gray-400">/ Admin</span></span>
           </Link>
           <button onClick={logout} className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">
             <LogOut className="h-4 w-4" /> Logout

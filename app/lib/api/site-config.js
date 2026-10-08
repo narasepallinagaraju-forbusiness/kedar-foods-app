@@ -5,8 +5,8 @@ export const FALLBACK_WHATSAPP = {
   number: WHATSAPP_NUMBER,
   display: WHATSAPP_DISPLAY,
   messageTemplate:
-    'Hi Kedar Foods! I am interested in bulk rates for {name}{pack} (SKU: {sku})?',
-  generalMessage: "Hi Kedar Foods! I'd like to enquire about bulk wholesale rates.",
+    'Hi Kedhar Foods! I am interested in bulk rates for {name}{pack} (SKU: {sku})?',
+  generalMessage: "Hi Kedhar Foods! I'd like to enquire about bulk wholesale rates.",
 }
 
 export async function fetchSiteConfig({ signal } = {}) {

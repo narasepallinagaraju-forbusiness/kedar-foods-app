@@ -53,7 +53,7 @@ export default function AdminLoginPage() {
           <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500 text-white">
             <Wheat className="h-5 w-5" />
           </span>
-          <span className="text-xl font-extrabold text-gray-900">Kedar Foods</span>
+          <span className="text-xl font-extrabold text-gray-900">Kedhar Foods</span>
         </Link>
 
         <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">

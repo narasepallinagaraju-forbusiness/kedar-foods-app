@@ -2,9 +2,9 @@ import './globals.css'
 import { Providers } from './providers'
 
 export const metadata = {
-  title: 'Kedar Foods | Wholesale Raw Materials for Bakeries, Cafes & Restaurants',
+  title: 'Kedhar Foods | Wholesale Raw Materials for Bakeries, Cafes & Restaurants',
   description:
-    'Kedar Foods supplies quality wholesale raw materials — dairy, flour, chocolate, coffee and more — to bakeries, cafes and restaurants. Enquire for bulk rates on WhatsApp.',
+    'Kedhar Foods supplies quality wholesale raw materials — dairy, flour, chocolate, coffee and more — to bakeries, cafes and restaurants. Enquire for bulk rates on WhatsApp.',
 }
 
 export default function RootLayout({ children }) {

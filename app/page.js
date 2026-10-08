@@ -156,7 +156,7 @@ export default function App() {
               Quality Raw Materials for <span className="text-amber-600">Bakeries, Cafes &amp; Restaurants</span>
             </h1>
             <p className="mt-4 max-w-lg text-base text-gray-600">
-              From premium dairy and flour to chocolate and cream — Kedar Foods keeps your kitchen stocked with dependable, food-grade ingredients at wholesale prices.
+              From premium dairy and flour to chocolate and cream — Kedhar Foods keeps your kitchen stocked with dependable, food-grade ingredients at wholesale prices.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link href="/catalogue" className="inline-flex items-center gap-2 rounded-full bg-amber-500 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-600">
@@ -193,7 +193,7 @@ export default function App() {
 
       {/* Quick facts: counts come from the live catalogue */}
       {catalogQuery.isSuccess && catalogItems.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 sm:px-6" aria-label="Kedar Foods at a glance">
+        <section className="mx-auto max-w-7xl px-4 sm:px-6" aria-label="Kedhar Foods at a glance">
           <div
             className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-8 text-center sm:py-10"
             style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8 }}
