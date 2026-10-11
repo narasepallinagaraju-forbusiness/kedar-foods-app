@@ -212,14 +212,22 @@ test('product validation reports each bad field', () => {
       name: 'A',
       brand: '',
       category: 'Nope',
-      quantities: '1kg, 1kg',
+      quantities: '',
       description: 'x'.repeat(2001),
       sortRank: '1.5',
     },
     { mode: 'create', categories: ['Dairy'] },
   )
-  for (const field of ['sku', 'name', 'brand', 'category', 'businessType', 'quantities', 'description', 'sortRank']) {
+  for (const field of ['sku', 'name', 'brand', 'category', 'businessType', 'description', 'sortRank']) {
     assert.ok(errors[field], `expected an error for ${field}`)
+  }
+  assert.ok(!errors.quantities, 'pack sizes are optional')
+})
+
+test('blank or "null" pack sizes mean no pack sizes', () => {
+  for (const value of ['', '  ', 'null', 'NULL']) {
+    assert.deepEqual(parseQuantities(value), [])
+    assert.ok(!validateProductForm({ ...VALID_FORM, quantities: value }, { mode: 'update' }).quantities)
   }
 })
 

@@ -56,10 +56,10 @@ SLUG_PATTERN = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 SLUG_SEPARATORS = re.compile(r"[^a-z0-9]+")
 OFFER_DEFAULT = {"enabled": False, "text": "", "link": "/catalogue"}
 PRODUCT_MESSAGE = (
-    "Hi Kedar Foods! I am interested in bulk rates for {name}{pack} (SKU: {sku})?"
+    "Hi Kedhar Foods! I am interested in bulk rates for {name}{pack} (SKU: {sku})?"
 )
 GENERAL_MESSAGE = (
-    "Hi Kedar Foods! I'd like to enquire about bulk wholesale rates."
+    "Hi Kedhar Foods! I'd like to enquire about bulk wholesale rates."
 )
 
 

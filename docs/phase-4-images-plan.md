@@ -33,6 +33,28 @@ which were deferred to this phase) and `PROJECT_PLAN.md` section 11.
   verified by the owner. Remaining: I (wrap-up, commit and tag `phase-4` only after
   owner approval). Git tag `pre-phase-4` exists.
 
+## Post-Phase-4 enhancements (owner requests after deploy 2)
+
+Implemented locally; **not yet tested or deployed** (owner runs checks and deploys).
+
+1. **Home page stats box** (`app/page.js`): Brands (distinct brand names in the live
+   catalogue), Products (live count) and Shops Served (fixed `1000+`), between the hero
+   and "Shop by Category". Frontend only.
+2. **Optional pack sizes**: `quantities` may be blank, `null` or missing (add, edit, CSV
+   import; the CSV `quantities` column itself is optional). Restoring a hidden product
+   no longer requires pack sizes. Customer pages already hide "Pack sizes" when empty.
+   Needs backend deploy + frontend deploy.
+3. **Delete product** (admin): trash icon next to Edit. The product must be **hidden
+   first**; the server refuses live products (`409 hide_before_delete`), and the delete is
+   conditional so a race cannot remove a live product. Confirmation prompt in the
+   browser. New route `POST /admin/products/{id}/delete` (POST because the API CORS
+   allows only GET/POST/PUT). IAM: `dynamodb:DeleteItem` added to the products Lambda
+   only (still no S3 delete, so uploaded pictures stay in S3; see
+   `future-enhancements.md`). Public index needs no rebuild because hidden products are
+   not in it. Needs backend deploy + frontend deploy.
+
+---
+
 ## 0. Owner decisions (answers to the first draft)
 
 1. Picture source: the admin chooses ONE method per picture: upload a file (or

@@ -19,7 +19,9 @@ export const EMPTY_PRODUCT_FORM = {
 }
 
 export function parseQuantities(value) {
-  return String(value ?? '')
+  const text = String(value ?? '').trim()
+  if (text.toLowerCase() === 'null') return []
+  return text
     .split(',')
     .map((part) => part.trim())
     .filter(Boolean)
@@ -63,12 +65,11 @@ export function validateProductForm(form, { mode, categories = [] }) {
     errors.businessType = 'Choose at least one business type.'
   }
   if (
-    quantities.length < 1 ||
     quantities.length > 12 ||
     new Set(quantities).size !== quantities.length ||
     quantities.some((q) => q.length > 20)
   ) {
-    errors.quantities = 'Enter 1-12 different pack sizes (up to 20 characters each).'
+    errors.quantities = 'Enter up to 12 different pack sizes (up to 20 characters each), or leave blank.'
   }
   if (form.description.length > 2000) {
     errors.description = 'Description can be up to 2000 characters.'

@@ -5,8 +5,15 @@ export const IMPORT_MAX_BYTES = 1024 * 1024
 export const IMPORT_BATCH_SIZE = 50
 export const IMPORT_BUSINESS_TYPES = ['Bakery', 'Cafe', 'Restaurant']
 
-const REQUIRED_COLUMNS = ['sku', 'name', 'brand', 'category', 'businessType', 'quantities']
-const KNOWN_COLUMNS = [...REQUIRED_COLUMNS, 'description', 'isTrending', 'sortRank', 'status']
+const REQUIRED_COLUMNS = ['sku', 'name', 'brand', 'category', 'businessType']
+const KNOWN_COLUMNS = [
+  ...REQUIRED_COLUMNS,
+  'quantities',
+  'description',
+  'isTrending',
+  'sortRank',
+  'status',
+]
 
 // Small RFC 4180 parser: quotes, doubled quotes, commas/newlines inside quotes, BOM.
 export function parseCsv(text) {
@@ -100,7 +107,7 @@ function buildRow(cells, columns, categories, lineNumber) {
     errors.push('status must be PUBLISHED or ARCHIVED (or blank for PUBLISHED).')
   }
 
-  const quantities = splitList(get('quantities'))
+  const quantities = get('quantities').toLowerCase() === 'null' ? [] : splitList(get('quantities'))
   const form = {
     sku,
     name: get('name'),

@@ -53,6 +53,15 @@ class FakeProductsTable:
                 item[field] = copy.deepcopy(values[source])
         return {"Attributes": copy.deepcopy(item)}
 
+    def delete_item(self, **kwargs: Any) -> dict[str, Any]:
+        product_id = kwargs["Key"]["productId"]
+        item = self.items.get(product_id)
+        live = kwargs["ExpressionAttributeValues"][":live"]
+        if item is None or item.get("status") == live:
+            raise FakeConditionError
+        del self.items[product_id]
+        return {}
+
     def query(self, **kwargs: Any) -> dict[str, Any]:
         slug = kwargs["ExpressionAttributeValues"][":slug"]
         found = [i for i in self.items.values() if i.get("slug") == slug]

@@ -49,3 +49,18 @@ export function getRelatedProducts(items, product, limit = 4) {
 export function getCatalogImageUrl(thumbnailKey) {
   return thumbnailKey ? `/${thumbnailKey}` : null
 }
+
+
+const HIDDEN_BRANDS = new Set(['local'].map((brand) => brand.toLowerCase()))
+
+export function getDisplayName(product) {
+  const brand = String(product?.brand ?? '').trim()
+  const name = String(product?.name ?? '').trim()
+  const brandKey = brand.toLowerCase()
+  const nameKey = name.toLowerCase()
+
+  if (!brand || HIDDEN_BRANDS.has(brandKey)) return name
+  // avoid "Amul Amul Unsalted Butter" when the name already starts with the brand
+  if (nameKey === brandKey || nameKey.startsWith(`${brandKey} `)) return name
+  return `${brand} ${name}`
+}

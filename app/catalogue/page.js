@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useState, useMemo } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { SlidersHorizontal, X, PackageSearch } from 'lucide-react'
 import Header from '@/components/kedar/Header'
@@ -12,12 +12,67 @@ import { BUSINESS_TYPES } from '@/lib/data'
 
 const PAGE_SIZE = 12
 const EMPTY_PRODUCTS = []
+const BRAND_PREVIEW_COUNT = 10
 
-function FilterGroup({ title, options, selected, onToggle }) {
+function BrandFilterGroup({ options, selected, onToggle }) {
+  const [query, setQuery] = useState('')
+  const [expanded, setExpanded] = useState(false)
+
+  const q = query.trim().toLowerCase()
+  const matches = q ? options.filter((brand) => brand.toLowerCase().includes(q)) : options
+
+  let visible
+  if (q || expanded) {
+    visible = matches
+  } else {
+    const preview = matches.slice(0, BRAND_PREVIEW_COUNT)
+    const selectedExtras = matches.filter(
+      (brand) => selected.includes(brand) && !preview.includes(brand),
+    )
+    visible = [...preview, ...selectedExtras]
+  }
+  const hiddenCount = matches.length - visible.length
+
+  return (
+    <div>
+      <FilterGroup
+        title="Brand"
+        options={visible}
+        selected={selected}
+        onToggle={onToggle}
+        extra={
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search brands"
+            aria-label="Search brands"
+            className="mb-2 mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 placeholder:text-gray-400 focus:border-amber-400 focus:outline-none"
+          />
+        }
+      />
+      {matches.length === 0 && (
+        <p className="py-2 text-xs text-gray-500">No brands found</p>
+      )}
+      {!q && matches.length > BRAND_PREVIEW_COUNT && (
+        <button
+          type="button"
+          onClick={() => setExpanded((value) => !value)}
+          className="mt-1 text-xs font-semibold text-amber-600 hover:underline"
+        >
+          {expanded ? 'Show fewer brands' : `Show ${hiddenCount} more brands`}
+        </button>
+      )}
+    </div>
+  )
+}
+
+function FilterGroup({ title, options, selected, onToggle, extra = null }) {
   return (
     <div className="border-b border-gray-100 py-4">
       <h4 className="mb-3 text-sm font-bold text-gray-900">{title}</h4>
       <div className="space-y-2">
+        {extra}
         {options.map((opt) => (
           <label key={opt} className="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
             <input
@@ -82,6 +137,23 @@ function CatalogueInner() {
     return pages.flat()
   }, [filtered, visiblePages])
 
+  const sentinelRef = useRef(null)
+  const hasMore = visibleProducts.length < filtered.length
+
+  useEffect(() => {
+    const node = sentinelRef.current
+    if (!hasMore || !node) return undefined
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) setVisiblePages((pages) => pages + 1)
+      },
+      { rootMargin: '400px 0px' },
+    )
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [hasMore, visiblePages])  
+
   const activeCount = brands.length + categories.length + businesses.length
   const clearAll = () => {
     setBrands([])
@@ -104,7 +176,7 @@ function CatalogueInner() {
         )}
       </div>
       <FilterGroup title="Business Type" options={BUSINESS_TYPES} selected={businesses} onToggle={(v) => toggle(setBusinesses, businesses, v)} />
-      <FilterGroup title="Brand" options={allBrands} selected={brands} onToggle={(v) => toggle(setBrands, brands, v)} />
+      <BrandFilterGroup options={allBrands} selected={brands} onToggle={(v) => toggle(setBrands, brands, v)} />
       <FilterGroup title="Category" options={allCategories} selected={categories} onToggle={(v) => toggle(setCategories, categories, v)} />
     </div>
   )
@@ -134,7 +206,12 @@ function CatalogueInner() {
         <div className="flex gap-8">
           {/* Sidebar (desktop) */}
           <aside className="hidden w-60 shrink-0 lg:block">
-            <div className="sticky top-24 rounded-2xl border border-gray-200 bg-white p-5">{Sidebar}</div>
+            <div
+              className="sticky top-24 overflow-y-auto rounded-2xl border border-gray-200 bg-white p-5"
+              style={{ maxHeight: 'calc(100vh - 7rem)', overscrollBehavior: 'contain' }}
+            >
+              {Sidebar}
+            </div>
           </aside>
 
           {/* Grid */}
@@ -169,8 +246,8 @@ function CatalogueInner() {
                     <ProductCard key={product.id} product={product} />
                   ))}
                 </div>
-                {visibleProducts.length < filtered.length && (
-                  <div className="mt-8 text-center">
+                {hasMore && (
+                  <div ref={sentinelRef} className="mt-8 text-center">
                     <button
                       onClick={() => setVisiblePages((pages) => pages + 1)}
                       className="rounded-full border border-gray-300 px-6 py-3 text-sm font-semibold text-gray-700 transition hover:border-amber-400 hover:text-amber-700"
@@ -189,13 +266,13 @@ function CatalogueInner() {
       {showFilters && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowFilters(false)} />
-          <div className="absolute left-0 top-0 h-full w-80 max-w-[85%] overflow-y-auto bg-white p-5 shadow-xl">
+          <div className="absolute left-0 top-0 h-full w-80 max-w-[85%] overflow-y-auto bg-white p-5 shadow-xl" style={{ overscrollBehavior: 'contain' }}>
             <div className="mb-2 flex items-center justify-between">
               <span className="text-base font-bold">Filters</span>
               <button onClick={() => setShowFilters(false)}><X className="h-5 w-5" /></button>
             </div>
             {Sidebar}
-            <button onClick={() => setShowFilters(false)} className="mt-4 w-full rounded-lg bg-amber-500 py-2.5 text-sm font-semibold text-white">Show {filtered.length} results</button>
+            <button onClick={() => setShowFilters(false)} className="sticky bottom-0 mt-4 w-full rounded-lg bg-amber-500 py-2.5 text-sm font-semibold text-white shadow-lg">Show {filtered.length} results</button>
           </div>
         </div>
       )}

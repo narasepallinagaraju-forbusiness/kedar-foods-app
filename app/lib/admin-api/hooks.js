@@ -67,6 +67,15 @@ export function useSetProductVisibility() {
   )
 }
 
+export function useDeleteProduct() {
+  return useProductMutation((id) =>
+    adminFetch({
+      method: 'POST',
+      path: `/admin/products/${encodeURIComponent(id)}/delete`,
+    }),
+  )
+}
+
 export function useRebuildIndex() {
   return useMutation({
     mutationFn: () =>

@@ -74,7 +74,7 @@ export default function ImportDialog({ categories, onClose }) {
           <>
             <p className="mb-3 text-sm text-gray-600">
               Choose a CSV file (UTF-8, up to 500 products). Use <b>|</b> between several business
-              types or pack sizes. Existing SKUs are skipped, never changed.
+              types or pack sizes (pack sizes may be blank or null). Existing SKUs are skipped, never changed.
             </p>
             <input type="file" accept=".csv,text/csv" onChange={onFile} disabled={running} />
           </>

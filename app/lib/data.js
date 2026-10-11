@@ -211,7 +211,7 @@ export const buildGeneralWaLink = () => {
 // Produce a ready-to-paste data.js module string from the current products.
 export function generateDataJsFile(products) {
   const parts = [];
-  parts.push("// Kedar Foods - product data (exported " + new Date().toISOString() + ")");
+  parts.push("// Kedhar Foods - product data (exported " + new Date().toISOString() + ")");
   parts.push("");
   parts.push('export const WHATSAPP_NUMBER = "917842331013";');
   parts.push('export const WHATSAPP_DISPLAY = "+91 78423 31013";');

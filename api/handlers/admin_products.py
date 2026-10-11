@@ -36,7 +36,7 @@ INDEX_KEY = "data/catalog-index.json"
 MAX_IMPORT_ROWS = 50
 MAX_IMPORT_BODY_BYTES = 256 * 1024
 PRODUCT_ID_PATTERN = re.compile(r"^prod_[0-9a-f]{10}$")
-REQUIRED_TO_SHOW = ("slug", "name", "brand", "category", "businessType", "quantities")
+REQUIRED_TO_SHOW = ("slug", "name", "brand", "category", "businessType")
 
 
 class CategoriesUnavailableError(Exception):
@@ -155,6 +155,27 @@ def _write_result(
                 "Saved, but the public list was not refreshed. Rebuild it."
             )
     return _no_store(status_code, body)
+
+
+def _delete_product(product_id: str, products: AdminProductsTable) -> dict[str, Any]:
+    """Permanently remove a hidden product. Live products must be hidden first."""
+    item = products.get_item(Key={"productId": product_id}).get("Item")
+    if not isinstance(item, Mapping):
+        return error_response(404, "not_found")
+    if item.get("status") == "PUBLISHED":
+        return error_response(409, "hide_before_delete")
+    try:
+        products.delete_item(
+            Key={"productId": product_id},
+            ConditionExpression="attribute_exists(productId) AND #s <> :live",
+            ExpressionAttributeNames={"#s": "status"},
+            ExpressionAttributeValues={":live": "PUBLISHED"},
+        )
+    except Exception as error:
+        if _condition_failed(error):
+            return error_response(409, "hide_before_delete")
+        raise
+    return _no_store(200, {"deleted": product_id})
 
 
 def _validation_response(error: ProductValidationError) -> dict[str, Any]:
@@ -497,10 +518,13 @@ def handler(
                 "PUT /admin/products/{id}",
                 "POST /admin/products/{id}/archive",
                 "POST /admin/products/{id}/restore",
+                "POST /admin/products/{id}/delete",
             )
         ):
             if product_id is None:
                 return error_response(404, "not_found")
+            if route == "POST /admin/products/{id}/delete":
+                return _delete_product(product_id, products)
             if route == "GET /admin/products/{id}":
                 item = products.get_item(Key={"productId": product_id}).get("Item")
                 if not isinstance(item, Mapping):

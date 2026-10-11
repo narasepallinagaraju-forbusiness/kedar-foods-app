@@ -224,11 +224,11 @@ export const getQuantities = (product) => {
 
 export const buildWaLink = (product, qty) => {
   const pack = qty ? " - Selected Pack Size: " + qty : "";
-  const text = "Hi Kedar Foods! I am interested in bulk rates for " + product.name + pack + " (SKU: " + product.id + ")?";
+  const text = "Hi Kedhar Foods! I am interested in bulk rates for " + product.name + pack + " (SKU: " + product.id + ")?";
   return "https://wa.me/" + WHATSAPP_NUMBER + "?text=" + encodeURIComponent(text);
 };
 
 export const buildGeneralWaLink = () => {
-  const text = "Hi Kedar Foods! I'd like to enquire about bulk wholesale rates.";
+  const text = "Hi Kedhar Foods! I'd like to enquire about bulk wholesale rates.";
   return "https://wa.me/" + WHATSAPP_NUMBER + "?text=" + encodeURIComponent(text);
 };

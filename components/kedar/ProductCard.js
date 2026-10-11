@@ -1,6 +1,6 @@
 'use client'
 
-import { getCatalogImageUrl } from '@/lib/api/catalog.mjs'
+import { getCatalogImageUrl, getDisplayName } from '@/lib/api/catalog.mjs'
 
 export default function ProductCard({ product }) {
   const quantities = Array.isArray(product.quantities) ? product.quantities : []
@@ -13,18 +13,22 @@ export default function ProductCard({ product }) {
           // eslint-disable-next-line @next/next/no-img-element
           <img src={imageUrl} alt={product.name} loading="lazy" className="h-full w-full object-cover" />
         ) : (
-          <div className="flex h-full items-center justify-center text-sm text-gray-400">No image available</div>
+          <div className="flex h-full items-center justify-center bg-gray-50 p-6">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="" className="max-h-full max-w-[60%] object-contain opacity-60" />
+          </div>
+          // <div className="flex h-full items-center justify-center text-sm text-gray-400">No image available</div>
         )}
-        <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-xs font-semibold text-gray-700 shadow-sm">
+        {/* <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-xs font-semibold text-gray-700 shadow-sm">
           {product.brand}
-        </span>
+        </span> */}
       </div>
 
       <div className="p-4">
         <p className="text-xs font-medium text-amber-700">{product.category}</p>
         <h2 className="mt-1 line-clamp-2 min-h-12 text-sm font-bold text-gray-900">
           <a href={`/products/${encodeURIComponent(product.slug)}`} className="hover:text-amber-600">
-            {product.name}
+            {getDisplayName(product)}
           </a>
         </h2>
         <p className="mt-2 text-xs text-gray-500">SKU: {product.sku}</p>

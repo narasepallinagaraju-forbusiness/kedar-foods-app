@@ -29,9 +29,10 @@ export default function Header({ initialSearch = '', onSearch = null, configEnab
       <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6">
         {/* Logo */}
         <Link href="/" className="flex shrink-0 items-center gap-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500 text-white shadow-sm">
+          {/* <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500 text-white shadow-sm">
             <Wheat className="h-5 w-5" />
-          </span>
+          </span> */}
+          <img src="/logo.png" alt="Kedar Foods" className="h-9 w-9 rounded-lg object-contain" />
           <span className="flex flex-col leading-none">
             <span className="text-lg font-extrabold tracking-tight text-gray-900">Kedhar Foods</span>
             <span className="text-[10px] font-medium uppercase tracking-widest text-amber-600">Wholesale Supply</span>

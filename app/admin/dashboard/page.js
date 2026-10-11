@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Wheat, LogOut, Pencil, X, Save, Flame, Plus, Megaphone, Eye, EyeOff, AlertCircle, RefreshCw, Search, Upload } from 'lucide-react'
+import { Wheat, LogOut, Pencil, X, Save, Flame, Plus, Megaphone, Eye, EyeOff, AlertCircle, RefreshCw, Search, Upload, Trash2 } from 'lucide-react'
 import { BUSINESS_TYPES } from '@/lib/data'
 import { useSiteConfig } from '@/lib/api/hooks'
 import { getSiteCategories } from '@/lib/api/site-config'
@@ -12,6 +12,7 @@ import {
   useAdminOffer,
   useAdminProducts,
   useCreateProduct,
+  useDeleteProduct,
   useRebuildIndex,
   useRemovePoster,
   useRemoveProductPicture,
@@ -68,6 +69,7 @@ export default function AdminDashboardPage() {
   const createProduct = useCreateProduct()
   const updateProduct = useUpdateProduct()
   const setVisibility = useSetProductVisibility()
+  const deleteMutation = useDeleteProduct()
   const rebuildIndex = useRebuildIndex()
   const saveOffer = useSaveOffer()
   const uploadPicture = useUploadProductPicture()
@@ -184,6 +186,20 @@ export default function AdminDashboardPage() {
       const visible = product.status !== 'PUBLISHED'
       const result = await setVisibility.mutateAsync({ id: product.productId, visible })
       reportWrite(result, visible ? 'Product is now visible.' : 'Product is now hidden.')
+    } catch (error) {
+      handleError(error)
+    }
+  }
+
+  const deleteProduct = async (product) => {
+    const ok = window.confirm(
+      `Permanently delete "${product.name}" (${product.sku})?\n\nThis cannot be undone.`,
+    )
+    if (!ok) return
+    setNotice(null)
+    try {
+      await deleteMutation.mutateAsync(product.productId)
+      setNotice({ type: 'ok', text: `Deleted ${product.name}.` })
     } catch (error) {
       handleError(error)
     }
@@ -447,9 +463,20 @@ export default function AdminDashboardPage() {
                         </button>
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <button onClick={() => openEdit(p)} className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:border-amber-300 hover:text-amber-600">
-                          <Pencil className="h-3.5 w-3.5" /> Edit
-                        </button>
+                        <div className="inline-flex items-center gap-2">
+                          <button onClick={() => openEdit(p)} className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:border-amber-300 hover:text-amber-600">
+                            <Pencil className="h-3.5 w-3.5" /> Edit
+                          </button>
+                          <button
+                            onClick={() => deleteProduct(p)}
+                            disabled={visible || deleteMutation.isPending}
+                            title={visible ? 'Hide this product first to delete it' : 'Delete permanently'}
+                            aria-label={`Delete ${p.name}`}
+                            className="inline-flex items-center rounded-lg border border-gray-200 px-2 py-1.5 text-gray-500 hover:border-red-300 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   )
@@ -484,7 +511,7 @@ export default function AdminDashboardPage() {
                 <FieldError message={formErrors.name} />
               </div>
               <div className="col-span-2">
-                <label className="mb-1 block text-xs font-semibold text-gray-600">Available Quantities / Pack Sizes</label>
+                <label className="mb-1 block text-xs font-semibold text-gray-600">Available Quantities / Pack Sizes (optional)</label>
                 <input value={form.quantities} onChange={(e) => setForm({ ...form, quantities: e.target.value })} placeholder="e.g. 100g, 500g, 1 kg, 5 kg" className={INPUT} />
                 <FieldError message={formErrors.quantities} />
               </div>

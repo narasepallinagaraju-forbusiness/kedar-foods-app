@@ -21,6 +21,9 @@ export function messageForStatus(status, payload) {
   if (status === 409 && payload?.error === 'duplicate_sku') {
     return 'A product with this SKU already exists.'
   }
+  if (status === 409 && payload?.error === 'hide_before_delete') {
+    return 'Hide this product first, then delete it.'
+  }
   if (status === 400 && Array.isArray(payload?.details) && payload.details.length) {
     return payload.details.map((d) => `${d.field}: ${d.message}`).join('; ')
   }

@@ -75,7 +75,6 @@ def test_create_accepts_published_status_and_optional_fields() -> None:
         ({"businessType": []}, "businessType"),
         ({"businessType": ["Hotel"]}, "businessType"),
         ({"businessType": ["Cafe", "Cafe"]}, "businessType"),
-        ({"quantities": []}, "quantities"),
         ({"quantities": ["1kg", "1kg"]}, "quantities"),
         ({"quantities": ["x" * 21]}, "quantities"),
         ({"quantities": [1]}, "quantities"),
@@ -99,6 +98,16 @@ def test_create_rejects_invalid_or_unknown_fields(
         validate_create_product(_body(**overrides), CATEGORIES)
 
     assert field in _fields(raised.value)
+
+
+def test_create_accepts_missing_null_or_empty_quantities() -> None:
+    values: list[list[str] | None] = [[], None]
+    for quantities in values:
+        clean = validate_create_product(_body(quantities=quantities), CATEGORIES)
+        assert clean["quantities"] == []
+    body = _body()
+    del body["quantities"]
+    assert validate_create_product(body, CATEGORIES)["quantities"] == []
 
 
 def test_create_reports_every_problem_and_rejects_non_objects() -> None:

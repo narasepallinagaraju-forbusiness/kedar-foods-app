@@ -7,7 +7,7 @@ import { useCatalogIndex, useProduct } from '../app/lib/api/hooks.js'
 import { getRelatedProducts } from '../app/lib/api/catalog.mjs'
 import { parseProductSlug } from '../app/lib/api/slug.mjs'
 
-const DEFAULT_TITLE = 'Kedar Foods | Wholesale Raw Materials for Bakeries, Cafes & Restaurants'
+const DEFAULT_TITLE = 'Kedhar Foods | Wholesale Raw Materials for Bakeries, Cafes & Restaurants'
 
 function subscribeToLocation(callback) {
   window.addEventListener('popstate', callback)
@@ -48,7 +48,7 @@ export default function ProductShell() {
 
   useEffect(() => {
     if (product) {
-      document.title = `${product.name} | Kedar Foods`
+      document.title = `${product.name} | Kedhar Foods`
     } else if (slug === null || productQuery.error?.status === 404) {
       document.title = DEFAULT_TITLE
     }

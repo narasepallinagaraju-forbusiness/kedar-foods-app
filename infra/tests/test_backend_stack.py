@@ -19,6 +19,7 @@ ADMIN_ROUTES = {
     "PUT /admin/products/{id}",
     "POST /admin/products/{id}/archive",
     "POST /admin/products/{id}/restore",
+    "POST /admin/products/{id}/delete",
     "POST /admin/catalog-index/rebuild",
     "GET /admin/site-config",
     "PUT /admin/site-config/offer",
@@ -334,6 +335,7 @@ def test_admin_functions_have_scoped_permissions_and_no_wildcards() -> None:
         "dynamodb:GetItem",
         "dynamodb:PutItem",
         "dynamodb:UpdateItem",
+        "dynamodb:DeleteItem",
         "dynamodb:Scan",
         "dynamodb:Query",
         "s3:PutObject",
@@ -348,8 +350,9 @@ def test_admin_functions_have_scoped_permissions_and_no_wildcards() -> None:
         assert statement["Effect"] == "Allow"
         assert statement["Resource"] != "*"
         assert "*" not in json.dumps(statement["Action"])
-    for action in ("dynamodb:DeleteItem", "s3:DeleteObject", "s3:GetObject"):
+    for action in ("s3:DeleteObject", "s3:GetObject"):
         assert action not in _actions(products) | _actions(site_config)
+    assert "dynamodb:DeleteItem" not in _actions(site_config)
 
 
 def test_admin_s3_write_is_limited_to_the_index_object() -> None:

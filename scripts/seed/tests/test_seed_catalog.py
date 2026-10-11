@@ -229,11 +229,11 @@ def test_site_config_default_offer_and_exact_public_shape(tmp_path: Path) -> Non
             "number": "917842331013",
             "display": "+91 78423 31013",
             "messageTemplate": (
-                "Hi Kedar Foods! I am interested in bulk rates for "
+                "Hi Kedhar Foods! I am interested in bulk rates for "
                 "{name}{pack} (SKU: {sku})?"
             ),
             "generalMessage": (
-                "Hi Kedar Foods! I'd like to enquire about bulk wholesale rates."
+                "Hi Kedhar Foods! I'd like to enquire about bulk wholesale rates."
             ),
         },
     }

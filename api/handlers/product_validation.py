@@ -166,10 +166,12 @@ def _validate_editable(
         clean["businessType"] = list(business_type)
 
     quantities = body.get("quantities")
-    quantity_problem = "must be 1-12 unique pack sizes of 1-20 characters"
+    quantity_problem = "must be up to 12 unique pack sizes of 1-20 characters"
+    if quantities is None:
+        quantities = []
     if (
         not isinstance(quantities, list)
-        or not 1 <= len(quantities) <= 12
+        or len(quantities) > 12
         or not all(isinstance(item, str) for item in quantities)
     ):
         errors.append({"field": "quantities", "message": quantity_problem})

@@ -55,7 +55,19 @@ test('bad values are reported per row', () => {
     'KF-8,Cream,Amul,Dairy,Bakery,,,,,',
   )
   assert.equal(rows.length, 7)
-  for (const row of rows) assert.ok(row.errors.length > 0, row.sku)
+  for (const row of rows.slice(0, 6)) assert.ok(row.errors.length > 0, row.sku)
+  assert.deepEqual(rows[6].errors, [])
+  assert.deepEqual(rows[6].payload.quantities, [])
+})
+
+test('"null" quantities and a missing quantities column both mean no pack sizes', () => {
+  const { rows } = run('KF-1,Cream,Amul,Dairy,Bakery,null,,,,')
+  assert.deepEqual(rows[0].payload.quantities, [])
+  const noColumn = prepareImport('sku,name,brand,category,businessType\nKF-2,Cream,Amul,Dairy,Bakery', {
+    categories: CATEGORIES,
+  })
+  assert.deepEqual(noColumn.rows[0].errors, [])
+  assert.deepEqual(noColumn.rows[0].payload.quantities, [])
 })
 
 test('a SKU repeated inside the file is flagged on the second line only', () => {

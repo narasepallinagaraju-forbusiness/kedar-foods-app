@@ -183,6 +183,7 @@ class BackendStack(Stack):
                     "dynamodb:GetItem",
                     "dynamodb:PutItem",
                     "dynamodb:UpdateItem",
+                    "dynamodb:DeleteItem",
                     "dynamodb:Scan",
                 ],
                 resources=[products_table.table_arn],
@@ -353,6 +354,11 @@ class BackendStack(Stack):
             ),
             (
                 "/admin/products/{id}/restore",
+                method_enum.POST,
+                admin_products_integration,
+            ),
+            (
+                "/admin/products/{id}/delete",
                 method_enum.POST,
                 admin_products_integration,
             ),

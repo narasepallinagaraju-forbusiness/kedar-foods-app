@@ -18,7 +18,7 @@ export default function Footer({ configEnabled = true }) {
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500 text-white">
               <Wheat className="h-4 w-4" />
             </span>
-            <span className="text-base font-extrabold text-gray-900">Kedar Foods</span>
+            <span className="text-base font-extrabold text-gray-900">Kedhar Foods</span>
           </div>
           <p className="mt-3 max-w-xs text-sm text-gray-500">
             Wholesale raw materials for bakeries, cafes and restaurants. Quality you can bake on.
@@ -41,7 +41,7 @@ export default function Footer({ configEnabled = true }) {
         </div>
       </div>
       <div className="border-t border-gray-200 py-4 text-center text-xs text-gray-400">
-        © {new Date().getFullYear()} Kedar Foods. All rights reserved.
+        © {new Date().getFullYear()} Kedhar Foods. All rights reserved.
       </div>
     </footer>
   )

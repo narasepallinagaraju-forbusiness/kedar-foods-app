@@ -122,6 +122,7 @@ def _json(response: dict[str, Any]) -> dict[str, Any]:
         "POST /admin/products/{id}/archive",
         "POST /admin/products/{id}/restore",
         "POST /admin/catalog-index/rebuild",
+        "POST /admin/products/{id}/delete",
         "POST /admin/products/import",
     ],
 )
@@ -381,6 +382,40 @@ def test_restore_incomplete_product_is_rejected() -> None:
     assert response["statusCode"] == 400
     assert _json(response)["error"] == "incomplete_product"
     assert env.products.items[product_id]["status"] == "ARCHIVED"
+
+
+def test_delete_removes_a_hidden_product_without_touching_the_index() -> None:
+    env = Env([_stored(status="ARCHIVED"), _stored("KF-02")])
+    product_id = product_id_from_sku("KF-01")
+
+    response = env.call("POST /admin/products/{id}/delete", product_id=product_id)
+
+    assert response["statusCode"] == 200
+    assert _json(response) == {"deleted": product_id}
+    assert product_id not in env.products.items
+    assert product_id_from_sku("KF-02") in env.products.items
+    assert env.s3.calls == []
+
+
+def test_delete_refuses_a_live_product() -> None:
+    env = Env([_stored(status="PUBLISHED")])
+    product_id = product_id_from_sku("KF-01")
+
+    response = env.call("POST /admin/products/{id}/delete", product_id=product_id)
+
+    assert response["statusCode"] == 409
+    assert _json(response)["error"] == "hide_before_delete"
+    assert product_id in env.products.items
+
+
+def test_delete_unknown_product_is_404() -> None:
+    env = Env()
+
+    response = env.call(
+        "POST /admin/products/{id}/delete", product_id=product_id_from_sku("NOPE-1")
+    )
+
+    assert response["statusCode"] == 404
 
 
 def test_index_failure_keeps_the_write_and_reports_it() -> None:
