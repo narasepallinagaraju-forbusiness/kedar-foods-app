@@ -26,6 +26,7 @@ def create_app(context: Mapping[str, str] | None = None) -> App:
     env_name = _get_environment_name(app.node.try_get_context("env"))
     domain_name = app.node.try_get_context("domainName")
     certificate_arn = app.node.try_get_context("certificateArn")
+    hosted_zone_id = app.node.try_get_context("hostedZoneId")
     site_origin = app.node.try_get_context("siteOrigin")
 
     environment = Environment(
@@ -38,6 +39,7 @@ def create_app(context: Mapping[str, str] | None = None) -> App:
         env_name=env_name,
         domain_name=domain_name,
         certificate_arn=certificate_arn,
+        hosted_zone_id=hosted_zone_id,
         site_origin=site_origin,
         env=environment,
         termination_protection=env_name == "prod",

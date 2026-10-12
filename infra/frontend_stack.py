@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import TYPE_CHECKING
 from urllib.parse import urlsplit
@@ -20,6 +21,12 @@ from aws_cdk import (
 )
 from aws_cdk import (
     aws_cloudfront_origins as cloudfront_origins,
+)
+from aws_cdk import (
+    aws_route53 as route53,
+)
+from aws_cdk import (
+    aws_route53_targets as route53_targets,
 )
 from aws_cdk import (
     aws_s3 as s3,
@@ -64,14 +71,36 @@ def _validate_site_origin(site_origin: str | None) -> None:
 
 
 def _validate_domain_and_certificate(
-    env_name: str, domain_name: str | None, certificate_arn: str | None
+    env_name: str,
+    domain_name: str | None,
+    certificate_arn: str | None,
+    hosted_zone_id: str | None = None,
 ) -> None:
-    if env_name == "dev" and (domain_name is not None or certificate_arn is not None):
-        raise ValueError("domainName and certificateArn are not allowed when env=dev.")
+    if env_name == "dev" and (
+        domain_name is not None
+        or certificate_arn is not None
+        or hosted_zone_id is not None
+    ):
+        raise ValueError(
+            "domainName, certificateArn and hostedZoneId are not allowed when env=dev."
+        )
     if (domain_name is None) != (certificate_arn is None):
         raise ValueError("domainName and certificateArn must be supplied together.")
     if certificate_arn is not None and ":us-east-1:" not in certificate_arn:
         raise ValueError("certificateArn must be an ACM certificate ARN in us-east-1.")
+    if hosted_zone_id is not None and domain_name is None:
+        raise ValueError("hostedZoneId requires domainName.")
+    if domain_name is not None and (
+        domain_name.startswith("www.")
+        or not re.fullmatch(
+            r"[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+",
+            domain_name,
+        )
+    ):
+        raise ValueError(
+            "domainName must be a bare hostname such as example.com "
+            "(no scheme, path, or www. prefix)."
+        )
 
 
 def _cache_policy(
@@ -109,10 +138,13 @@ class FrontendStack(Stack):
         domain_name: str | None,
         certificate_arn: str | None,
         site_origin: str | None,
+        hosted_zone_id: str | None = None,
         env: Environment | None = None,
         termination_protection: bool = False,
     ) -> None:
-        _validate_domain_and_certificate(env_name, domain_name, certificate_arn)
+        _validate_domain_and_certificate(
+            env_name, domain_name, certificate_arn, hosted_zone_id
+        )
         _validate_site_origin(site_origin)
         super().__init__(
             scope,
@@ -326,10 +358,29 @@ class FrontendStack(Stack):
                     ttl=Duration.seconds(10),
                 ),
             ],
-            domain_names=[domain_name] if domain_name is not None else None,
+            domain_names=(
+                [domain_name, f"www.{domain_name}"] if domain_name is not None else None
+            ),
             certificate=certificate,
             minimum_protocol_version=cloudfront.SecurityPolicyProtocol.TLS_V1_2_2021,
         )
+        if domain_name is not None and hosted_zone_id is not None:
+            zone = route53.HostedZone.from_hosted_zone_attributes(
+                self,
+                "HostedZone",
+                hosted_zone_id=hosted_zone_id,
+                zone_name=domain_name,
+            )
+            target = route53.RecordTarget.from_alias(
+                route53_targets.CloudFrontTarget(distribution)
+            )
+            for label, record_name in (("Apex", domain_name), ("Www", f"www.{domain_name}")):
+                route53.ARecord(
+                    self, f"{label}ARecord", zone=zone, record_name=record_name, target=target
+                )
+                route53.AaaaRecord(
+                    self, f"{label}AaaaRecord", zone=zone, record_name=record_name, target=target
+                )
         self.distribution_domain_name = distribution.distribution_domain_name
         self.data_bucket_name = data_bucket.bucket_name
 

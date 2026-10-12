@@ -43,6 +43,34 @@ for (const [input, expected] of cases) {
   }
 }
 
+const redirectCases = [
+  ['www.kedharfoods.in', '/', {}, 'https://kedharfoods.in/'],
+  ['www.kedharfoods.in', '/catalogue', { category: { value: 'Dairy' } }, 'https://kedharfoods.in/catalogue?category=Dairy'],
+  ['www.kedharfoods.in', '/products/a', { x: { value: '1', multiValue: [{ value: '1' }, { value: '2' }] } }, 'https://kedharfoods.in/products/a?x=1&x=2'],
+  ['WWW.kedharfoods.in', '/admin', {}, 'https://kedharfoods.in/admin'],
+]
+
+for (const [host, uri, querystring, expected] of redirectCases) {
+  const response = handler({ request: { uri, querystring, headers: { host: { value: host } } } })
+  const location = response.headers?.location?.value
+  if (response.statusCode === 301 && location === expected) {
+    console.log(`PASS redirect ${host}${uri} -> ${location}`)
+  } else {
+    failures += 1
+    console.error(`FAIL redirect ${host}${uri}: expected 301 ${expected}, got ${response.statusCode} ${location}`)
+  }
+}
+
+for (const host of ['kedharfoods.in', 'd123.cloudfront.net']) {
+  const response = handler({ request: { uri: '/catalogue', querystring: {}, headers: { host: { value: host } } } })
+  if (response.uri === '/catalogue.html' && !response.statusCode) {
+    console.log(`PASS no redirect for host ${host}`)
+  } else {
+    failures += 1
+    console.error(`FAIL host ${host} should not redirect`)
+  }
+}
+
 async function findHtmlFiles(directory) {
   const entries = await readdir(directory, { withFileTypes: true })
   const files = []

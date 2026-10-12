@@ -4118,3 +4118,6 @@ html.dark-theme textarea::placeholder {
 .stat-label {
   color: #080b13 !important; /* dark amber-brown, readable on the cream box */
 }
+html {
+  background-color: #ed4e18; /* light cream background color */
+}

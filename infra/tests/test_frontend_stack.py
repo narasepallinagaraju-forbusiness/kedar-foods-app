@@ -22,6 +22,7 @@ def _stack(
     env_name: str = "prod",
     domain_name: str | None = None,
     certificate_arn: str | None = None,
+    hosted_zone_id: str | None = None,
     site_origin: str | None = None,
 ) -> FrontendStack:
     app = App()
@@ -31,6 +32,7 @@ def _stack(
         env_name=env_name,
         domain_name=domain_name,
         certificate_arn=certificate_arn,
+        hosted_zone_id=hosted_zone_id,
         site_origin=site_origin,
         env=Environment(account="123456789012", region="ap-south-1"),
     )
@@ -370,11 +372,46 @@ def test_distribution_sets_minimum_tls_protocol_for_custom_domain() -> None:
     distribution = next(
         iter(template.find_resources("AWS::CloudFront::Distribution").values())
     )["Properties"]["DistributionConfig"]
-    assert distribution["Aliases"] == [domain_name]
+    assert distribution["Aliases"] == [domain_name, f"www.{domain_name}"]
     assert (
         distribution["ViewerCertificate"]["AcmCertificateArn"] == certificate_arn
     )
     assert distribution["ViewerCertificate"]["MinimumProtocolVersion"] == "TLSv1.2_2021"
+
+
+CERT = "arn:aws:acm:us-east-1:123456789012:certificate/abcd"
+
+
+def test_hosted_zone_creates_alias_records_for_apex_and_www() -> None:
+    template = _template(
+        _stack(domain_name="shop.example.com", certificate_arn=CERT, hosted_zone_id="Z123")
+    )
+    for record_type in ("A", "AAAA"):
+        records = template.find_resources(
+            "AWS::Route53::RecordSet", {"Properties": {"Type": record_type}}
+        )
+        names = sorted(r["Properties"]["Name"] for r in records.values())
+        assert names == ["shop.example.com.", "www.shop.example.com."]
+        for record in records.values():
+            assert record["Properties"]["HostedZoneId"] == "Z123"
+
+
+def test_no_dns_records_without_hosted_zone() -> None:
+    template = _template(_stack(domain_name="shop.example.com", certificate_arn=CERT))
+    assert template.find_resources("AWS::Route53::RecordSet") == {}
+
+
+def test_hosted_zone_requires_domain() -> None:
+    with pytest.raises(ValueError, match="hostedZoneId requires domainName"):
+        _stack(hosted_zone_id="Z123")
+
+
+@pytest.mark.parametrize(
+    "domain", ["www.example.com", "https://example.com", "example.com/", "example"]
+)
+def test_domain_must_be_bare_hostname(domain: str) -> None:
+    with pytest.raises(ValueError, match="bare hostname"):
+        _stack(domain_name=domain, certificate_arn=CERT)
 
 
 def test_response_headers_policy_has_required_security_headers() -> None:
