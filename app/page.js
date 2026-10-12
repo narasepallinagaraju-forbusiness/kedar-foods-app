@@ -13,6 +13,8 @@ import { getCatalogImageUrl } from '@/lib/api/catalog.mjs'
 import { buildGeneralWhatsAppUrl, buildProductWhatsAppUrl } from '@/lib/api/whatsapp.mjs'
 import { TOP_BRANDS } from '@/lib/data'
 
+const CATEGORY_ICON_EXT = 'webp' // change to 'png' or 'svg' if you saved them that way
+
 const STYLES = [
   {
     name: 'For Bakeries',
@@ -191,28 +193,9 @@ export default function App() {
         </div>
       </section>
 
-      {/* Quick facts: counts come from the live catalogue */}
-      {catalogQuery.isSuccess && catalogItems.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 sm:px-6" aria-label="Kedhar Foods at a glance">
-          <div
-            className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-8 text-center sm:py-10"
-            style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8 }}
-          >
-            {[
-              { value: brandCount, label: 'Brands' },
-              { value: catalogItems.length, label: 'Products' },
-              { value: '1000+', label: 'Shops Served' },
-            ].map((stat) => (
-              <div key={stat.label}>
-                <div className="text-3xl font-extrabold text-amber-600 sm:text-4xl">{stat.value}</div>
-                <div className="stat-label mt-2 text-sm font-bold sm:text-base">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+      
 
-      {/* Categories from the public site configuration */}
+      {/* Categories from the public site configuration
       <section className="mx-auto mt-16 max-w-7xl px-4 sm:px-6">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900">Shop by Category</h2>
@@ -226,6 +209,45 @@ export default function App() {
               className="rounded-full border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 transition hover:border-amber-400 hover:text-amber-700"
             >
               {category.name}
+            </Link>
+          ))}
+        </div>
+      </section> */}
+
+      {/* Categories from the public site configuration */}
+      <section className="mx-auto mt-16 max-w-7xl px-4 sm:px-6">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900">Shop by Category</h2>
+          <p className="mt-2 text-gray-500">Browse our wholesale ingredient ranges.</p>
+        </div>
+        <div
+          className="mt-8"
+          style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '24px 12px' }}
+        >
+          {categories.map((category) => (
+            <Link
+              key={category.id}
+              href={`/catalogue?category=${encodeURIComponent(category.name)}`}
+              className="group flex flex-col items-center gap-2 text-center"
+              style={{ width: 92 }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={`/category-icons/${category.id}.${CATEGORY_ICON_EXT}`}
+                alt=""
+                width={64}
+                height={64}
+                loading="lazy"
+                style={{ width: 64, height: 64, objectFit: 'contain' }}
+                onError={(event) => {
+                  event.currentTarget.onerror = null
+                  event.currentTarget.src = '/logo.png'
+                  event.currentTarget.style.opacity = '0.6'
+                }}
+              />
+              <span className="text-xs font-semibold leading-tight text-gray-800 group-hover:text-amber-700 sm:text-sm">
+                {category.name}
+              </span>
             </Link>
           ))}
         </div>
@@ -259,6 +281,28 @@ export default function App() {
         </div>
       </section>
 
+      {/* Quick facts: counts come from the live catalogue */}
+      {catalogQuery.isSuccess && catalogItems.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 sm:px-6" aria-label="Kedhar Foods at a glance">
+          <div
+            className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-8 text-center sm:py-10"
+            style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8 }}
+          >
+            {[
+              { value: brandCount, label: 'Brands' },
+              { value: catalogItems.length, label: 'Products' },
+              { value: '1000+', label: 'Shops Served' },
+            ].map((stat) => (
+              <div key={stat.label}>
+                <div className="text-3xl font-extrabold text-amber-600 sm:text-4xl">{stat.value}</div>
+                <div className="stat-label mt-2 text-sm font-bold sm:text-base">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      
       {/* Top Brands We Supply */}
       <section className="mt-16 border-y border-gray-100 bg-gray-50 py-10">
         <h2 className="mb-6 text-center text-xl font-bold text-gray-900">Top Brands We Supply</h2>
