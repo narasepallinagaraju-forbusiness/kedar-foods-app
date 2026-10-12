@@ -25,7 +25,7 @@ export default function ProductCard({ product }) {
       </div>
 
       <div className="p-4">
-        <p className="text-xs font-medium text-amber-700">{product.category}</p>
+        {/* <p className="text-xs font-medium text-amber-700">{product.category}</p> */}
         <h2 className="mt-1 line-clamp-2 min-h-12 text-sm font-bold text-gray-900">
           <a href={`/products/${encodeURIComponent(product.slug)}`} className="hover:text-amber-600">
             {getDisplayName(product)}

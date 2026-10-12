@@ -194,7 +194,6 @@ export default function App() {
       </section>
 
       
-
       {/* Categories from the public site configuration
       <section className="mx-auto mt-16 max-w-7xl px-4 sm:px-6">
         <div className="text-center">
@@ -280,10 +279,10 @@ export default function App() {
           ))}
         </div>
       </section>
-
+      
       {/* Quick facts: counts come from the live catalogue */}
       {catalogQuery.isSuccess && catalogItems.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 sm:px-6" aria-label="Kedhar Foods at a glance">
+        <section className="mx-auto mt-16 max-w-7xl px-4 sm:px-6" aria-label="Kedhar Foods at a glance">
           <div
             className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-8 text-center sm:py-10"
             style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8 }}
@@ -302,7 +301,7 @@ export default function App() {
         </section>
       )}
 
-      
+
       {/* Top Brands We Supply */}
       <section className="mt-16 border-y border-gray-100 bg-gray-50 py-10">
         <h2 className="mb-6 text-center text-xl font-bold text-gray-900">Top Brands We Supply</h2>

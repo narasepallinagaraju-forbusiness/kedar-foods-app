@@ -2,27 +2,16 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { Search, MessageCircle, Menu, X, Wheat } from 'lucide-react'
+import { MessageCircle, Menu, X } from 'lucide-react'
+import SearchBox from '@/components/kedar/SearchBox'
 import { getWhatsAppConfig } from '@/lib/api/site-config'
 import { useSiteConfig } from '@/lib/api/hooks'
 import { buildGeneralWhatsAppUrl } from '@/lib/api/whatsapp.mjs'
 
 export default function Header({ initialSearch = '', onSearch = null, configEnabled = true }) {
-  const router = useRouter()
-  const [query, setQuery] = useState(initialSearch)
   const [mobileOpen, setMobileOpen] = useState(false)
   const { data: siteConfig } = useSiteConfig(configEnabled)
   const whatsapp = getWhatsAppConfig(siteConfig)
-
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    if (onSearch) {
-      onSearch(query)
-    } else {
-      router.push(`/catalogue?search=${encodeURIComponent(query)}`)
-    }
-  }
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-gray-200 bg-white/90 backdrop-blur">
@@ -40,15 +29,12 @@ export default function Header({ initialSearch = '', onSearch = null, configEnab
         </Link>
 
         {/* Search (desktop) */}
-        <form onSubmit={handleSubmit} className="relative hidden flex-1 md:block">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search butter, flour, coffee beans..."
-            className="w-full rounded-full border border-gray-200 bg-gray-50 py-2 pl-10 pr-4 text-sm text-gray-800 outline-none transition focus:border-amber-400 focus:bg-white focus:ring-2 focus:ring-amber-100"
-          />
-        </form>
+        <SearchBox
+          initialSearch={initialSearch}
+          onSearch={onSearch}
+          placeholder="Search butter, flour, coffee beans..."
+          className="hidden flex-1 md:block"
+        />
 
         <div className="ml-auto flex items-center gap-2">
           <Link href="/catalogue" className="hidden rounded-full px-4 py-2 text-sm font-semibold text-gray-700 hover:text-amber-600 sm:block">
@@ -77,15 +63,7 @@ export default function Header({ initialSearch = '', onSearch = null, configEnab
       {/* Search (mobile) */}
       {mobileOpen && (
         <div className="border-t border-gray-100 px-4 py-3 md:hidden">
-          <form onSubmit={handleSubmit} className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search products..."
-              className="w-full rounded-full border border-gray-200 bg-gray-50 py-2 pl-10 pr-4 text-sm outline-none focus:border-amber-400 focus:bg-white"
-            />
-          </form>
+          <SearchBox initialSearch={initialSearch} onSearch={onSearch} placeholder="Search products..." autoFocus />
         </div>
       )}
     </header>
