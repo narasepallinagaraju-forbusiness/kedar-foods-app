@@ -34,6 +34,7 @@ export default function Footer({ configEnabled = true }) {
           <ul className="mt-3 space-y-2 text-gray-500">
             <li><Link href="/" className="hover:text-amber-600">Home</Link></li>
             <li><Link href="/catalogue" className="hover:text-amber-600">Catalogue</Link></li>
+            <li><Link href="/bio" className="hover:text-amber-600">Bio</Link></li>
             {/* <li><Link href="/admin" className="hover:text-amber-600">Admin Portal</Link></li> */}
           </ul>
         </div>
@@ -73,8 +74,8 @@ export default function Footer({ configEnabled = true }) {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/google-maps.png" alt="" width={20} height={20} style={{ width: 20, height: 20, objectFit: 'contain', flexShrink: 0, marginTop: 2 }} />
             <span className="leading-snug">
-              27-20-24, Museum Rd,<br />
-              opp. K.L University, Governor Peta,<br />
+              29-36-39,Meghana Enterprises, Museum Rd,<br />
+              opp. K.L University, Governar Peta,<br />
               Vijayawada, Andhra Pradesh 520002
             </span>
           </a>

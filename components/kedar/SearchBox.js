@@ -31,20 +31,21 @@ export default function SearchBox({ initialSearch = '', onSearch = null, placeho
     return () => document.removeEventListener('pointerdown', handlePointerDown)
   }, [])
 
-  const goToProduct = (product) => {
+  const submitSearch = (value = query) => {
     setOpen(false)
-    router.push(`/products/${encodeURIComponent(product.slug)}`)
+    setActive(-1)
+    if (onSearch) onSearch(value)
+    else router.push(`/catalogue?search=${encodeURIComponent(value)}`)
   }
 
-  const submitSearch = () => {
-    setOpen(false)
-    if (onSearch) onSearch(query)
-    else router.push(`/catalogue?search=${encodeURIComponent(query)}`)
+  const selectSuggestion = (product) => {
+    setQuery(product.name)
+    submitSearch(product.name)
   }
 
   const handleSubmit = (event) => {
     event.preventDefault()
-    if (active >= 0 && suggestions[active]) goToProduct(suggestions[active])
+    if (active >= 0 && suggestions[active]) selectSuggestion(suggestions[active])
     else submitSearch()
   }
 
@@ -102,7 +103,7 @@ export default function SearchBox({ initialSearch = '', onSearch = null, placeho
               <button
                 type="button"
                 onMouseEnter={() => setActive(index)}
-                onClick={() => goToProduct(product)}
+                onClick={() => selectSuggestion(product)}
                 className={`flex w-full items-center justify-between gap-3 px-4 py-2 text-left text-sm ${index === active ? 'bg-amber-50 text-amber-700' : 'text-gray-800 hover:bg-gray-50'}`}
               >
                 <span className="truncate font-medium">{getDisplayName(product)}</span>
@@ -116,7 +117,7 @@ export default function SearchBox({ initialSearch = '', onSearch = null, placeho
           <li className="border-t border-gray-100">
             <button
               type="button"
-              onClick={submitSearch}
+              onClick={() => submitSearch()}
               className="w-full px-4 py-2 text-left text-sm font-semibold text-amber-600 hover:bg-gray-50"
             >
               See all results for &quot;{trimmed}&quot;
