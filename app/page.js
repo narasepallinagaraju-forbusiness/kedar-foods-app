@@ -117,6 +117,19 @@ function HeroCarousel({ slides }) {
   )
 }
 
+const DELIVERY_MESSAGE =
+  'Bulk wholesale: enquire for best rates. Delivery across Vijayawada, Guntur, Tenali, Mangalagiri, Machilipatnam, Eluru, Gudivada, Nuzvid, Amaravati, Narasaraopet and nearby areas'
+
+function DeliveryTicker() {
+  return (
+    <div className="delivery-ticker" role="region" aria-label="Delivery information">
+      <div className="delivery-ticker-viewport">
+        <span className="delivery-ticker-item">{DELIVERY_MESSAGE}</span>
+      </div>
+    </div>
+  )
+}
+
 export default function App() {
   const catalogQuery = useCatalogIndex()
   const siteConfigQuery = useSiteConfig()
@@ -134,6 +147,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-white">
+      <DeliveryTicker />
       <Header />
 
       {/* Conditional sitewide promo (collapses fully when inactive) */}
@@ -221,30 +235,31 @@ export default function App() {
         </div>
         <div
           className="mt-8"
-          style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '24px 12px' }}
+          style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 16 }}
         >
           {categories.map((category) => (
             <Link
               key={category.id}
               href={`/catalogue?category=${encodeURIComponent(category.name)}`}
-              className="group flex flex-col items-center gap-2 text-center"
-              style={{ width: 92 }}
+              className="category-card"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={`/category-icons/${category.id}.${CATEGORY_ICON_EXT}`}
-                alt=""
-                width={64}
-                height={64}
-                loading="lazy"
-                style={{ width: 64, height: 64, objectFit: 'contain' }}
-                onError={(event) => {
-                  event.currentTarget.onerror = null
-                  event.currentTarget.src = '/logo.png'
-                  event.currentTarget.style.opacity = '0.6'
-                }}
-              />
-              <span className="text-xs font-semibold leading-tight text-gray-800 group-hover:text-amber-700 sm:text-sm">
+              <span className="category-card-icon">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`/category-icons/${category.id}.${CATEGORY_ICON_EXT}`}
+                  alt=""
+                  width={56}
+                  height={56}
+                  loading="lazy"
+                  style={{ width: 56, height: 56, objectFit: 'contain', mixBlendMode: 'multiply' }}
+                  onError={(event) => {
+                    event.currentTarget.onerror = null
+                    event.currentTarget.src = '/logo.png'
+                    event.currentTarget.style.opacity = '0.6'
+                  }}
+                />
+              </span>
+              <span className="category-card-label">
                 {category.name}
               </span>
             </Link>
